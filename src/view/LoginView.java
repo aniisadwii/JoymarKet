@@ -36,12 +36,20 @@ public class LoginView {
             String email = txtEmail.getText();
             String pass = txtPass.getText();
             
-            boolean success = userController.login(email, pass);
-            if (success) {
-                // TODO: Pindah ke Home Page
-                System.out.println("Login Sukses! OTW Home...");
+            model.User user = userController.login(email, pass);
+            
+            if (user != null) {
+                // Cek Role dan Arahkan
+                if (user.getRole().equals("Customer")) {
+                    new CustomerMainView(stage);
+                } else if (user.getRole().equals("Admin")) {
+                    new AdminMainView(stage);
+                } else {
+                    // Jaga-jaga kalau ada role Courier nanti
+                    lblError.setText("Role tidak dikenali!");
+                }
             } else {
-                lblError.setText("Invalid Credentials / Gagal Login bestie");
+                lblError.setText("Email atau Password salah bestie :(");
             }
         });
 

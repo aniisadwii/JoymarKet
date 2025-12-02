@@ -4,6 +4,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import model.User;
 import util.Connect;
+import util.Session;
 import model.Customer;
 import model.Admin;
 
@@ -12,23 +13,37 @@ public class UserController {
     private Connect db = Connect.getInstance();
 
     // Validasi Login
-    public boolean login(String email, String password) {
-        if (email.isEmpty() || password.isEmpty()) {
-            return false; // Atau throw error message
-        }
-        
-        // Cek ke DB
-        String query = "SELECT * FROM Users WHERE email = '" + email + "' AND password = '" + password + "'";
+ // Ganti return type dari boolean jadi User (atau void kalau mau langsung set session)
+    public User login(String email, String password) {
+        User user = null;
+        String query = String.format("SELECT * FROM Users WHERE email = '%s' AND password = '%s'", email, password);
         ResultSet rs = db.execQuery(query);
-        
+
         try {
             if (rs.next()) {
-                return true; // User found
+                String id = rs.getString("idUser");
+                String name = rs.getString("fullName");
+                String phone = rs.getString("phone");
+                String addr = rs.getString("address");
+                String role = rs.getString("role");
+                
+                // Karena class User itu Abstract, kita harus instansiasi anaknya (Polymorphism)
+                if (role.equals("Customer")) {
+                    // Default balance 0 dulu, nanti bisa di-fetch lagi kalau perlu
+                    user = new Customer(id, name, email, password, phone, addr, 0.0);
+                } else if (role.equals("Admin")) {
+                    // Default emergency contact null dulu
+                    user = new Admin(id, name, email, password, phone, addr, "-");
+                }
+                
+                // Simpan ke Session biar bisa dipake di halaman lain
+                Session.getInstance().setUser(user);
             }
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        return false;
+        
+        return user; // Kalau gagal login, ini bakal null
     }
 
     // Validasi Register Customer (Sesuai Soal)
