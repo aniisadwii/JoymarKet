@@ -7,6 +7,7 @@ import util.Connect;
 import util.Session;
 import model.Customer;
 import model.Admin;
+import model.Courier;
 
 public class UserController {
     
@@ -34,6 +35,10 @@ public class UserController {
                 } else if (role.equals("Admin")) {
                     // Default emergency contact null dulu
                     user = new Admin(id, name, email, password, phone, addr, "-");
+                } else if (role.equals("Courier")) {
+                    // Karena di tabel 'Users' gak ada info kendaraan, kita isi dummy dulu "Unknown"
+                    // Nanti kalau dashboardnya udah canggih, baru kita fetch dari tabel 'Couriers'
+                    user = new Courier(id, name, email, password, phone, addr, "Unknown", "Unknown");
                 }
                 
                 // Simpan ke Session biar bisa dipake di halaman lain

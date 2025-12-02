@@ -44,6 +44,8 @@ public class LoginView {
                     new CustomerMainView(stage);
                 } else if (user.getRole().equals("Admin")) {
                     new AdminMainView(stage);
+                } else if (user.getRole().equals("Courier")) {
+                    new CourierMainView(stage); 
                 } else {
                     // Jaga-jaga kalau ada role Courier nanti
                     lblError.setText("Role tidak dikenali!");
