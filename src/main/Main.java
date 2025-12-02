@@ -1,14 +1,18 @@
 package main;
 
-import util.Connect;
+import javafx.application.Application;
+import javafx.stage.Stage;
+import view.LoginView;
 
-public class Main {
-    public Main() {
-        // Coba panggil koneksi
-        Connect.getInstance();
-    }
+public class Main extends Application {
 
     public static void main(String[] args) {
-        new Main();
+        launch(args);
+    }
+
+    @Override
+    public void start(Stage primaryStage) throws Exception {
+        // Kita arahin langsung ke LoginView pas pertama buka
+        new LoginView(primaryStage);
     }
 }
