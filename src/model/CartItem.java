@@ -21,7 +21,25 @@ public class CartItem {
     public int getQuantity() { return quantity; }
     public double getTotal() { return total; }
     
-    public void setQuantity(int quantity) {
+    
+    
+    public void setIdProduct(String idProduct) {
+		this.idProduct = idProduct;
+	}
+
+	public void setProductName(String productName) {
+		this.productName = productName;
+	}
+
+	public void setPrice(double price) {
+		this.price = price;
+	}
+
+	public void setTotal(double total) {
+		this.total = total;
+	}
+
+	public void setQuantity(int quantity) {
         this.quantity = quantity;
         this.total = this.price * quantity;
     }

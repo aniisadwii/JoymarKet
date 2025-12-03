@@ -115,7 +115,19 @@ public class CustomerMainView {
         btnLogout.setOnAction(e -> {
             Session.getInstance().setUser(null);
             new LoginView(stage);
+            
         });
+        
+        Button btnEditProfile = new Button("Edit Profile ✏️");
+        btnEditProfile.setOnAction(e -> {
+            new EditProfileView(); // Buka window edit
+        });
+        
+        Button btnViewCart = new Button("View Cart 🛒");
+        btnViewCart.setOnAction(e -> {
+            new CartView(stage); // Pindah ke layar keranjang
+        });
+
 
         // 4. Layout (Add to children)
         VBox centerLayout = new VBox(10);
@@ -125,7 +137,7 @@ public class CustomerMainView {
         VBox topLayout = new VBox(10);
         topLayout.setPadding(new Insets(10));
         topLayout.setStyle("-fx-background-color: #f0f0f0;");
-        topLayout.getChildren().addAll(lblWelcome, balanceBox, lblInfo, btnLogout); 
+        topLayout.getChildren().addAll(lblWelcome, balanceBox, btnViewCart, btnEditProfile, lblInfo, btnLogout);
 
         BorderPane root = new BorderPane();
         root.setTop(topLayout);

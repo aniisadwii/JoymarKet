@@ -15,8 +15,8 @@ public class UserController {
 
     // Validasi Login
  // Ganti return type dari boolean jadi User (atau void kalau mau langsung set session)
-    public User login(String email, String password) {
-        User user = null;
+    public model.User login(String email, String password) {
+        model.User user = null;
         String query = String.format("SELECT * FROM Users WHERE email = '%s' AND password = '%s'", email, password);
         ResultSet rs = db.execQuery(query);
 
@@ -28,29 +28,35 @@ public class UserController {
                 String addr = rs.getString("address");
                 String role = rs.getString("role");
                 
-                // Karena class User itu Abstract, kita harus instansiasi anaknya (Polymorphism)
                 if (role.equals("Customer")) {
-                    // Default balance 0 dulu, nanti bisa di-fetch lagi kalau perlu
-                    user = new Customer(id, name, email, password, phone, addr, 0.0);
+                    // --- PERBAIKAN DI SINI ---
+                    // Kita ambil balance asli dari tabel Customers
+                    double balance = 0.0;
+                    String queryBalance = "SELECT balance FROM Customers WHERE idCustomer = '" + id + "'";
+                    ResultSet rsBalance = db.execQuery(queryBalance);
+                    
+                    if (rsBalance.next()) {
+                        balance = rsBalance.getDouble("balance");
+                    }
+                    
+                    // Masukin balance asli ke constructor
+                    user = new model.Customer(id, name, email, password, phone, addr, balance);
+                    // -------------------------
+                    
                 } else if (role.equals("Admin")) {
-                    // Default emergency contact null dulu
-                    user = new Admin(id, name, email, password, phone, addr, "-");
+                    user = new model.Admin(id, name, email, password, phone, addr, "-");
                 } else if (role.equals("Courier")) {
-                    // Karena di tabel 'Users' gak ada info kendaraan, kita isi dummy dulu "Unknown"
-                    // Nanti kalau dashboardnya udah canggih, baru kita fetch dari tabel 'Couriers'
-                    user = new Courier(id, name, email, password, phone, addr, "Unknown", "Unknown");
+                    user = new model.Courier(id, name, email, password, phone, addr, "Unknown", "Unknown");
                 }
                 
-                // Simpan ke Session biar bisa dipake di halaman lain
                 Session.getInstance().setUser(user);
             }
         } catch (SQLException e) {
             e.printStackTrace();
         }
         
-        return user; // Kalau gagal login, ini bakal null
+        return user;
     }
-
     // Validasi Register Customer (Sesuai Soal)
     // Return String kosong kalau sukses, return error message kalau gagal
     public String registerCustomer(String fullName, String email, String password, String confirmPass, String phone, String address, String gender) {
@@ -89,6 +95,30 @@ public class UserController {
 
         db.execUpdate(queryUser);
         db.execUpdate(queryCustomer);
+
+        return "Success";
+    }
+    
+    public String updateProfile(String idUser, String newName, String newPhone, String newAddress) {
+        // 1. Validasi Input (Sesuai Soal)
+        if (newName.isEmpty()) return "Name cannot be empty";
+        if (newAddress.isEmpty()) return "Address cannot be empty";
+        
+        // Validasi Phone
+        if (newPhone.isEmpty()) return "Phone cannot be empty";
+        if (newPhone.length() < 10 || newPhone.length() > 13) return "Phone must be 10-13 digits";
+        if (!isNumeric(newPhone)) return "Phone must be numeric";
+
+        // 2. Update Database
+        String query = String.format("UPDATE Users SET fullName = '%s', phone = '%s', address = '%s' WHERE idUser = '%s'",
+                newName, newPhone, newAddress, idUser);
+        db.execUpdate(query);
+
+        // 3. Update Session (PENTING! Biar tampilan nama di dashboard langsung berubah)
+        User currentUser = Session.getInstance().getUser();
+        currentUser.setFullName(newName);
+        currentUser.setPhone(newPhone);
+        currentUser.setAddress(newAddress);
 
         return "Success";
     }
