@@ -38,17 +38,28 @@ public class CourierController {
         }
         return jobs;
     }
-
-    // 2. Update Status Jadi Delivered
-    public String completeDelivery(String orderId) {
+    
+ // 2. Update Status (Bisa Pending, In Progress, atau Delivered)
+    public void updateStatus(String orderId, String newStatus) {
         // Update di OrderHeaders
-        String queryOrder = String.format("UPDATE OrderHeaders SET status = 'Delivered' WHERE idOrder = '%s'", orderId);
+        String queryOrder = String.format("UPDATE OrderHeaders SET status = '%s' WHERE idOrder = '%s'", newStatus, orderId);
         db.execUpdate(queryOrder);
         
         // Update di Deliveries juga biar sinkron
-        String queryDelivery = String.format("UPDATE Deliveries SET status = 'Delivered' WHERE idOrder = '%s'", orderId);
+        String queryDelivery = String.format("UPDATE Deliveries SET status = '%s' WHERE idOrder = '%s'", newStatus, orderId);
         db.execUpdate(queryDelivery);
-
-        return "Success";
     }
+
+//    // 2. Update Status Jadi Delivered
+//    public String completeDelivery(String orderId) {
+//        // Update di OrderHeaders
+//        String queryOrder = String.format("UPDATE OrderHeaders SET status = 'Delivered' WHERE idOrder = '%s'", orderId);
+//        db.execUpdate(queryOrder);
+//        
+//        // Update di Deliveries juga biar sinkron
+//        String queryDelivery = String.format("UPDATE Deliveries SET status = 'Delivered' WHERE idOrder = '%s'", orderId);
+//        db.execUpdate(queryDelivery);
+//
+//        return "Success";
+//    }
 }

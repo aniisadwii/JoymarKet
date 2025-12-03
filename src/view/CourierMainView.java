@@ -11,6 +11,9 @@ import javafx.stage.Stage;
 import model.Order;
 import util.Session;
 
+import java.util.List;
+import java.util.Optional;
+
 public class CourierMainView {
     private Stage stage;
     private CourierController courierController = new CourierController();
@@ -46,29 +49,36 @@ public class CourierMainView {
         refreshTable(table, courierId);
 
         // 2. Tombol Aksi
-        Button btnFinish = new Button("Selesaikan Pengiriman ✅");
+        // GANTI TOMBOL DISINI
+        Button btnUpdateStatus = new Button("Update Status 📝");
         Button btnRefresh = new Button("Refresh");
         Button btnLogout = new Button("Logout");
 
-        // Logic Selesaikan Pengiriman
-        btnFinish.setOnAction(e -> {
+        // Logic Update Status dengan Pilihan
+        btnUpdateStatus.setOnAction(e -> {
             Order selectedJob = table.getSelectionModel().getSelectedItem();
             if (selectedJob == null) {
                 showAlert(Alert.AlertType.WARNING, "Pilih kerjaan dulu bang kurir!");
                 return;
             }
 
-            // Konfirmasi
-            Alert confirm = new Alert(Alert.AlertType.CONFIRMATION, "Paket udah sampe ke customer?", ButtonType.YES, ButtonType.NO);
-            confirm.showAndWait();
+            // Opsi Status sesuai soal
+            List<String> statusOptions = List.of("Pending", "In Progress", "Delivered");
 
-            if (confirm.getResult() == ButtonType.YES) {
-                String status = courierController.completeDelivery(selectedJob.getIdOrder());
-                if (status.equals("Success")) {
-                    showAlert(Alert.AlertType.INFORMATION, "Mantap! Paket Delivered.");
-                    refreshTable(table, courierId);
-                }
-            }
+            // Munculin Dialog Dropdown
+            ChoiceDialog<String> dialog = new ChoiceDialog<>(selectedJob.getStatus(), statusOptions);
+            dialog.setTitle("Update Delivery Status");
+            dialog.setHeaderText("Update status untuk Order: " + selectedJob.getIdOrder());
+            dialog.setContentText("Pilih Status Baru:");
+
+            Optional<String> result = dialog.showAndWait();
+            result.ifPresent(newStatus -> {
+                // Panggil method baru di controller
+                courierController.updateStatus(selectedJob.getIdOrder(), newStatus);
+                
+                showAlert(Alert.AlertType.INFORMATION, "Status berhasil diupdate jadi: " + newStatus);
+                refreshTable(table, courierId);
+            });
         });
 
         btnRefresh.setOnAction(e -> refreshTable(table, courierId));
@@ -78,10 +88,10 @@ public class CourierMainView {
             new LoginView(stage);
         });
 
-        // Layout
+        // Layout (Update tombol yang dimasukin)
         VBox layout = new VBox(10);
         layout.setPadding(new Insets(20));
-        layout.getChildren().addAll(lblTitle, new Label("List Pengiriman Aktif:"), table, btnFinish, btnRefresh, btnLogout);
+        layout.getChildren().addAll(lblTitle, new Label("List Pengiriman Aktif:"), table, btnUpdateStatus, btnRefresh, btnLogout);
 
         BorderPane root = new BorderPane();
         root.setCenter(layout);

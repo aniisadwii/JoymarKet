@@ -7,6 +7,7 @@ import java.util.List;
 
 import model.CartItem;
 import model.Customer;
+import model.Promo;
 import util.Connect;
 import util.Session;
 
@@ -171,6 +172,113 @@ public class TransactionController {
         user.setBalance(newBalance);
 
         // 5. Kosongin Keranjang
+        String clearCart = "DELETE FROM CartItems WHERE idCustomer = '" + userId + "'";
+        db.execUpdate(clearCart);
+
+        return "Success";
+    }
+    
+ // Fitur Update Cart (Edit Qty)
+    public String updateCartQty(String userId, String productId, int newQty) {
+        // Cek stok dulu
+        int currentStock = getProductStock(productId);
+        if (newQty > currentStock) return "Stok tidak cukup! Sisa: " + currentStock;
+        if (newQty <= 0) return "Jumlah harus lebih dari 0";
+
+        String query = String.format("UPDATE CartItems SET count = %d WHERE idCustomer = '%s' AND idProduct = '%s'", 
+                newQty, userId, productId);
+        db.execUpdate(query);
+        return "Success";
+    }
+
+    // Fitur Remove from Cart
+    public void deleteCartItem(String userId, String productId) {
+        String query = String.format("DELETE FROM CartItems WHERE idCustomer = '%s' AND idProduct = '%s'", 
+                userId, productId);
+        db.execUpdate(query);
+    }
+    
+    public Promo getPromo(String code) {
+        String query = "SELECT * FROM Promos WHERE code = '" + code + "'";
+        ResultSet rs = db.execQuery(query);
+        try {
+            if (rs.next()) {
+                return new Promo(
+                    rs.getString("idPromo"),
+                    rs.getString("code"),
+                    rs.getDouble("discountPercentage")
+                );
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null; // Kalau gak ketemu
+    }
+    
+ // UPDATE Method Checkout (Nambah Parameter promoCode)
+    public String checkout(String userId, String promoCode) {
+        List<CartItem> cart = getCartItems(userId);
+        if (cart.isEmpty()) return "Cart is empty";
+
+        // 1. Hitung Total Awal & Validasi Stok
+        double totalAmount = 0;
+        for (CartItem item : cart) {
+            int currentStock = getProductStock(item.getIdProduct());
+            if (currentStock < item.getQuantity()) {
+                return "Stock changed! " + item.getProductName() + " not enough.";
+            }
+            totalAmount += item.getTotal();
+        }
+
+        // 2. Cek Promo Code (Kalau diisi)
+        String idPromo = null; // Default null (kalo gak pake promo)
+        
+        if (promoCode != null && !promoCode.isEmpty()) {
+            Promo promo = getPromo(promoCode);
+            if (promo == null) {
+                return "Invalid Promo Code!"; // Requirement: Must exist in DB
+            }
+            
+            // Hitung Diskon
+            double discount = totalAmount * (promo.getDiscountPercentage() / 100.0);
+            totalAmount -= discount; // Kurangi total
+            idPromo = promo.getIdPromo(); // Simpan ID Promo buat dimasukin ke DB
+        }
+
+        // 3. Cek Saldo User (Pake Total yg udah didiskon)
+        Customer user = (Customer) Session.getInstance().getUser();
+        if (user.getBalance() < totalAmount) {
+            return "Balance not sufficient! (Total after discount: " + totalAmount + ")";
+        }
+
+        // --- MULAI TRANSAKSI ---
+        String orderId = "OR" + System.currentTimeMillis();
+        
+        // Insert Header (Pake idPromo, bisa null)
+        // Note: di SQL string '%s' kalo null bakal error string "null", jadi kita handle dikit stringnya
+        String idPromoVal = (idPromo == null) ? "NULL" : "'" + idPromo + "'";
+        
+        String queryHeader = String.format("INSERT INTO OrderHeaders (idOrder, idCustomer, idPromo, totalAmount, status, orderedAt) VALUES ('%s', '%s', %s, %f, 'Pending', NOW())",
+                orderId, userId, idPromoVal, totalAmount);
+        
+        db.execUpdate(queryHeader);
+
+        // ... (Sisa logic insert detail, potong stok, potong saldo, clear cart SAMA KAYAK SEBELUMNYA) ...
+        
+        // Insert Detail
+        for (CartItem item : cart) {
+            String queryDetail = String.format("INSERT INTO OrderDetails VALUES ('%s', '%s', %d)", orderId, item.getIdProduct(), item.getQuantity());
+            db.execUpdate(queryDetail);
+            String updateStock = String.format("UPDATE Products SET stock = stock - %d WHERE idProduct = '%s'", item.getQuantity(), item.getIdProduct());
+            db.execUpdate(updateStock);
+        }
+
+        // Potong Saldo & Clear Cart
+        double newBalance = user.getBalance() - totalAmount;
+        String updateBalance = String.format("UPDATE Customers SET balance = %f WHERE idCustomer = '%s'", newBalance, userId);
+        db.execUpdate(updateBalance);
+        user.setBalance(newBalance); // Update Session
+
         String clearCart = "DELETE FROM CartItems WHERE idCustomer = '" + userId + "'";
         db.execUpdate(clearCart);
 
