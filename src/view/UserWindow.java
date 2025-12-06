@@ -1,6 +1,6 @@
 package view;
 
-import controller.UserController;
+import controller.UserHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -10,11 +10,14 @@ import javafx.stage.Stage;
 import model.User;
 import util.Session;
 
-public class EditProfileView {
+// RENAME CLASS: Sesuai Sequence Diagram (UserWindow)
+public class UserWindow {
+    
     private Stage stage; // Stage baru (pop-up)
-    private UserController userController = new UserController();
+    private UserHandler userHandler = new UserHandler();
 
-    public EditProfileView() {
+    // Constructor kosong (karena ini window baru/popup)
+    public UserWindow() {
         this.stage = new Stage();
         initialize();
     }
@@ -25,7 +28,7 @@ public class EditProfileView {
         Label lblTitle = new Label("Edit Profile");
         lblTitle.setStyle("-fx-font-size: 18px; -fx-font-weight: bold;");
 
-        // Input Fields (Diisi data lama dulu)
+        // Input Fields (Diisi data lama)
         TextField txtName = new TextField(user.getFullName());
         txtName.setPromptText("Full Name");
         
@@ -37,11 +40,11 @@ public class EditProfileView {
         txtAddress.setPrefHeight(80);
 
         Button btnSave = new Button("Save Changes 💾");
-        
         Label lblMsg = new Label();
 
         btnSave.setOnAction(e -> {
-            String result = userController.updateProfile(
+            // Panggil UserHandler.editProfile
+            String result = userHandler.editProfile(
                 user.getIdUser(),
                 txtName.getText(),
                 txtPhone.getText(),
@@ -49,8 +52,8 @@ public class EditProfileView {
             );
 
             if (result.equals("Success")) {
-                showAlert(Alert.AlertType.INFORMATION, "Success", "Profil berhasil diupdate! Silakan relogin atau refresh dashboard.");
-                stage.close(); // Tutup window edit
+                showAlert(Alert.AlertType.INFORMATION, "Success", "Profil berhasil diupdate! Data akan berubah setelah relogin.");
+                stage.close(); // Tutup window
             } else {
                 lblMsg.setText(result);
                 lblMsg.setStyle("-fx-text-fill: red;");
@@ -64,7 +67,7 @@ public class EditProfileView {
 
         Scene scene = new Scene(layout, 350, 400);
         stage.setScene(scene);
-        stage.setTitle("Edit Profile");
+        stage.setTitle("JoyMarket - Edit Profile");
         stage.show(); // Tampilkan sebagai window baru
     }
 

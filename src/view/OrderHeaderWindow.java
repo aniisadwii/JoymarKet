@@ -1,6 +1,7 @@
 package view;
 
-import controller.TransactionController;
+import controller.CartItemHandler;
+import controller.OrderHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -12,23 +13,25 @@ import javafx.stage.Stage;
 import model.CartItem;
 import model.Customer;
 import util.Session;
-
 import java.util.List;
-import java.util.Optional;
 
-public class CartView {
+// Nama Class Sesuai Sequence Diagram (OrderHeaderWindow)
+public class OrderHeaderWindow {
     private Stage stage;
-    private TransactionController transactionController = new TransactionController();
+    private CartItemHandler cartHandler = new CartItemHandler();
+    private OrderHandler orderHandler = new OrderHandler();
     private Customer currentUser;
+    
+    private VBox editArea; 
 
-    public CartView(Stage stage) {
+    public OrderHeaderWindow(Stage stage) {
         this.stage = stage;
         this.currentUser = (Customer) Session.getInstance().getUser();
         initialize();
     }
 
     private void initialize() {
-        Label lblTitle = new Label("Your Cart 🛒");
+        Label lblTitle = new Label("Checkout / Cart 🛒");
         lblTitle.setStyle("-fx-font-size: 20px; -fx-font-weight: bold;");
 
         TableView<CartItem> table = new TableView<>();
@@ -49,117 +52,106 @@ public class CartView {
         table.getColumns().addAll(colName, colQty, colPrice, colTotal);
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
 
-        // Label Total
         Label lblTotal = new Label("Total: calculating...");
-        
         refreshTable(table, lblTotal);
         
         TextField txtPromo = new TextField();
         txtPromo.setPromptText("Promo Code (Optional)");
-        txtPromo.setPrefWidth(150);
 
-        // --- BUTTONS ---
         Button btnEdit = new Button("Edit Qty ✏️");
         Button btnDelete = new Button("Remove Item 🗑️");
         Button btnCheckout = new Button("Checkout Now 💸");
         Button btnBack = new Button("Back to Home");
+        Button btnRefresh = new Button("Refresh Data 🔄"); 
 
-        // Logic Edit Qty
+        // --- Logic Buttons ---
+        
         btnEdit.setOnAction(e -> {
             CartItem selected = table.getSelectionModel().getSelectedItem();
-            if (selected == null) {
-                showAlert(Alert.AlertType.WARNING, "Pilih barang dulu!");
-                return;
-            }
-
-            TextInputDialog dialog = new TextInputDialog(String.valueOf(selected.getQuantity()));
-            dialog.setTitle("Edit Quantity");
-            dialog.setHeaderText("Ubah jumlah " + selected.getProductName());
-            dialog.setContentText("Qty Baru:");
-
-            Optional<String> result = dialog.showAndWait();
-            result.ifPresent(qtyStr -> {
-                if (!qtyStr.matches("\\d+")) {
-                    showAlert(Alert.AlertType.ERROR, "Harus angka woi!");
-                    return;
-                }
-                int newQty = Integer.parseInt(qtyStr);
-                String status = transactionController.updateCartQty(currentUser.getIdUser(), selected.getIdProduct(), newQty);
-                
-                if (status.equals("Success")) {
-                    refreshTable(table, lblTotal);
-                } else {
-                    showAlert(Alert.AlertType.ERROR, status);
-                }
+            if (selected == null) { showAlert(Alert.AlertType.WARNING, "Pilih barang dulu!"); return; }
+            editArea.getChildren().clear();
+            CartItemWindow editWindow = new CartItemWindow(selected, () -> {
+                refreshTable(table, lblTotal); 
+                editArea.getChildren().clear(); 
             });
+            editArea.getChildren().add(editWindow.getView());
         });
 
-        // Logic Delete
+        btnRefresh.setOnAction(e -> refreshTable(table, lblTotal));
+
         btnDelete.setOnAction(e -> {
             CartItem selected = table.getSelectionModel().getSelectedItem();
-            if (selected == null) {
-                showAlert(Alert.AlertType.WARNING, "Pilih barang dulu yang mau dibuang!");
-                return;
-            }
+            if (selected == null) { showAlert(Alert.AlertType.WARNING, "Pilih barang!"); return; }
             
-            transactionController.deleteCartItem(currentUser.getIdUser(), selected.getIdProduct());
-            refreshTable(table, lblTotal);
+            String status = cartHandler.deleteCartItem(currentUser.getIdUser(), selected.getIdProduct());
+            if (status.equals("Success")) {
+                showAlert(Alert.AlertType.INFORMATION, "Berhasil dihapus! 🗑️");
+                refreshTable(table, lblTotal);
+                editArea.getChildren().clear();
+            } else {
+                showAlert(Alert.AlertType.ERROR, status);
+            }
         });
 
-        // Logic Checkout
+        // --- LOGIC CHECKOUT (YANG INI UPDATE) ---
         btnCheckout.setOnAction(e -> {
-            if (table.getItems().isEmpty()) {
-                showAlert(Alert.AlertType.WARNING, "Keranjang kosong melompong!");
-                return;
-            }
+            if (table.getItems().isEmpty()) { showAlert(Alert.AlertType.WARNING, "Keranjang kosong!"); return; }
             
-            // Ambil text promo
-            String code = txtPromo.getText().trim();
+            String promoCode = txtPromo.getText().trim();
             
             Alert confirm = new Alert(Alert.AlertType.CONFIRMATION, "Yakin mau bayar?", ButtonType.YES, ButtonType.NO);
             confirm.showAndWait();
 
             if (confirm.getResult() == ButtonType.YES) {
-                // Panggil checkout pake parameter kode promo
-                String result = transactionController.checkout(currentUser.getIdUser(), code);
+                // 1. GENERATE ID ORDER Manual (Tanpa UUID)
+                // Format: OR + Timestamp (Contoh: OR1709882233) -> Dijamin unik & Angka
+                String idOrder = "OR" + System.currentTimeMillis();
+
+                // 2. Panggil Method
+                String result = orderHandler.checkout(idOrder, promoCode);
                 
                 if (result.equals("Success")) {
-                    showAlert(Alert.AlertType.INFORMATION, "Checkout Berhasil! 🛵");
-                    new CustomerMainView(stage);
+                    showAlert(Alert.AlertType.INFORMATION, "Subscription Successful"); 
+                    new CustomerWindow(stage); 
                 } else {
-                    showAlert(Alert.AlertType.ERROR, result);
+                    if (result.contains("Balance")) {
+                         showAlert(Alert.AlertType.ERROR, "Insufficient Balance");
+                    } else {
+                         showAlert(Alert.AlertType.ERROR, result);
+                    }
                 }
             }
         });
 
-        btnBack.setOnAction(e -> new CustomerMainView(stage));
+        btnBack.setOnAction(e -> new CustomerWindow(stage)); 
 
-        // Layout Tombol
-        HBox itemActions = new HBox(10, btnEdit, btnDelete);
+        HBox itemActions = new HBox(10, btnEdit, btnDelete, btnRefresh);
         itemActions.setAlignment(Pos.CENTER_LEFT);
-        
         HBox mainActions = new HBox(10, btnBack, btnCheckout);
         mainActions.setAlignment(Pos.CENTER_RIGHT);
         
+        editArea = new VBox();
+        editArea.setPadding(new Insets(10));
+        editArea.setStyle("-fx-background-color: #f0f0f0;"); 
+
         VBox layout = new VBox(10);
         layout.setPadding(new Insets(20));
-        layout.getChildren().addAll(lblTitle, table, itemActions, lblTotal, new Label("Punya kode promo?"), txtPromo, mainActions);
+        layout.getChildren().addAll(lblTitle, table, itemActions, editArea, lblTotal, new Label("Punya kode promo?"), txtPromo, mainActions);
 
-        Scene scene = new Scene(layout, 600, 500);
+        Scene scene = new Scene(layout, 600, 600);
         stage.setScene(scene);
-        stage.setTitle("JoyMarket - Cart");
+        stage.setTitle("JoyMarket - Checkout");
+        stage.show();
     }
 
     private void refreshTable(TableView<CartItem> table, Label label) {
-        List<CartItem> items = transactionController.getCartItems(currentUser.getIdUser());
+        List<CartItem> items = cartHandler.getCartItems(currentUser.getIdUser());
         table.getItems().setAll(items);
-        
         double total = 0;
         for (CartItem item : items) total += item.getTotal();
         label.setText("Total Payment: Rp " + total);
-        label.setStyle("-fx-font-weight: bold; -fx-font-size: 14px;");
     }
-
+    
     private void showAlert(Alert.AlertType type, String content) {
         Alert alert = new Alert(type);
         alert.setContentText(content);

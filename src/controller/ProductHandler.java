@@ -7,7 +7,7 @@ import java.util.List;
 import model.Product;
 import util.Connect;
 
-public class ProductController {
+public class ProductHandler {
     private Connect db = Connect.getInstance();
 
     // Ambil semua produk buat ditampilin di list
@@ -30,5 +30,17 @@ public class ProductController {
             e.printStackTrace();
         }
         return products;
+    }
+    
+ // METHOD BARU: Sesuai Class Diagram "editProductStock"
+    public String editProductStock(String idProduct, int newStock) {
+        // Validasi Sederhana (Sesuai Activity Diagram)
+        if (newStock < 0) return "Stock cannot be negative";
+        
+        // Update Database
+        String query = String.format("UPDATE Products SET stock = %d WHERE idProduct = '%s'", newStock, idProduct);
+        db.execUpdate(query);
+        
+        return "Success";
     }
 }

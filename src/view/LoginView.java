@@ -1,6 +1,6 @@
 package view;
 
-import controller.UserController;
+import controller.UserHandler;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
@@ -10,7 +10,7 @@ import javafx.stage.Stage;
 public class LoginView {
     
     private Stage stage;
-    private UserController userController = new UserController();
+    private UserHandler userHandler = new UserHandler();
 
     public LoginView(Stage stage) {
         this.stage = stage;
@@ -36,12 +36,12 @@ public class LoginView {
             String email = txtEmail.getText();
             String pass = txtPass.getText();
             
-            model.User user = userController.login(email, pass);
+            model.User user = userHandler.login(email, pass);
             
             if (user != null) {
                 // Cek Role dan Arahkan
                 if (user.getRole().equals("Customer")) {
-                    new CustomerMainView(stage);
+                    new CustomerWindow(stage);
                 } else if (user.getRole().equals("Admin")) {
                     new AdminMainView(stage);
                 } else if (user.getRole().equals("Courier")) {

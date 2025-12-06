@@ -1,6 +1,6 @@
 package view;
 
-import controller.CourierController;
+import controller.DeliveryHandler;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
@@ -10,13 +10,12 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import model.Order;
 import util.Session;
-
 import java.util.List;
 import java.util.Optional;
 
 public class CourierMainView {
     private Stage stage;
-    private CourierController courierController = new CourierController();
+    private DeliveryHandler deliveryHandler = new DeliveryHandler();
 
     public CourierMainView(Stage stage) {
         this.stage = stage;
@@ -38,23 +37,28 @@ public class CourierMainView {
 
         TableColumn<Order, String> colCust = new TableColumn<>("Customer ID");
         colCust.setCellValueFactory(new PropertyValueFactory<>("idCustomer"));
+        
+        TableColumn<Order, Double> colTotal = new TableColumn<>("Total");
+        colTotal.setCellValueFactory(new PropertyValueFactory<>("totalAmount"));
 
         TableColumn<Order, String> colStatus = new TableColumn<>("Status");
         colStatus.setCellValueFactory(new PropertyValueFactory<>("status"));
 
-        table.getColumns().addAll(colId, colCust, colStatus);
+        table.getColumns().addAll(colId, colCust, colTotal, colStatus);
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
 
-        // Load Data
+        // Load Data Awal
         refreshTable(table, courierId);
 
-        // 2. Tombol Aksi
-        // GANTI TOMBOL DISINI
+        // 2. Tombol Aksi (Refresh Dihapus)
         Button btnUpdateStatus = new Button("Update Status 📝");
-        Button btnRefresh = new Button("Refresh");
+        Button btnEditProfile = new Button("Edit Profile ✏️");
+        btnEditProfile.setOnAction(e -> {
+            new UserWindow(); 
+        });
         Button btnLogout = new Button("Logout");
 
-        // Logic Update Status dengan Pilihan
+        // Logic Update Status
         btnUpdateStatus.setOnAction(e -> {
             Order selectedJob = table.getSelectionModel().getSelectedItem();
             if (selectedJob == null) {
@@ -62,10 +66,8 @@ public class CourierMainView {
                 return;
             }
 
-            // Opsi Status sesuai soal
             List<String> statusOptions = List.of("Pending", "In Progress", "Delivered");
 
-            // Munculin Dialog Dropdown
             ChoiceDialog<String> dialog = new ChoiceDialog<>(selectedJob.getStatus(), statusOptions);
             dialog.setTitle("Update Delivery Status");
             dialog.setHeaderText("Update status untuk Order: " + selectedJob.getIdOrder());
@@ -73,25 +75,28 @@ public class CourierMainView {
 
             Optional<String> result = dialog.showAndWait();
             result.ifPresent(newStatus -> {
-                // Panggil method baru di controller
-                courierController.updateStatus(selectedJob.getIdOrder(), newStatus);
+                // Panggil Controller
+                String updateResult = deliveryHandler.editDeliveryStatus(selectedJob.getIdOrder(), newStatus);
                 
-                showAlert(Alert.AlertType.INFORMATION, "Status berhasil diupdate jadi: " + newStatus);
-                refreshTable(table, courierId);
+                if (updateResult.equals("Success")) {
+                    showAlert(Alert.AlertType.INFORMATION, "Status berhasil diupdate jadi: " + newStatus);
+                    refreshTable(table, courierId); // <--- INI SUDAH CUKUP BUAT REFRESH
+                } else {
+                    showAlert(Alert.AlertType.ERROR, "Gagal update status!");
+                }
             });
         });
-
-        btnRefresh.setOnAction(e -> refreshTable(table, courierId));
 
         btnLogout.setOnAction(e -> {
             Session.getInstance().setUser(null);
             new LoginView(stage);
         });
 
-        // Layout (Update tombol yang dimasukin)
+        // Layouting
         VBox layout = new VBox(10);
         layout.setPadding(new Insets(20));
-        layout.getChildren().addAll(lblTitle, new Label("List Pengiriman Aktif:"), table, btnUpdateStatus, btnRefresh, btnLogout);
+        // Hapus btnRefresh dari sini
+        layout.getChildren().addAll(lblTitle, new Label("List Pengiriman Aktif:"), table, btnUpdateStatus, btnEditProfile, btnLogout);
 
         BorderPane root = new BorderPane();
         root.setCenter(layout);
@@ -103,7 +108,7 @@ public class CourierMainView {
     }
 
     private void refreshTable(TableView<Order> table, String courierId) {
-        table.getItems().setAll(courierController.getMyJobs(courierId));
+        table.getItems().setAll(deliveryHandler.getDeliveries(courierId));
     }
 
     private void showAlert(Alert.AlertType type, String content) {

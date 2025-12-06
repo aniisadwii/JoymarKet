@@ -1,6 +1,6 @@
 package view;
 
-import controller.UserController;
+import controller.UserHandler;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
@@ -10,7 +10,7 @@ import javafx.stage.Stage;
 public class RegisterView {
     
     private Stage stage;
-    private UserController userController = new UserController();
+    private UserHandler userHandler = new UserHandler();
 
     public RegisterView(Stage stage) {
         this.stage = stage;
@@ -33,9 +33,9 @@ public class RegisterView {
 
         btnSubmit.setOnAction(e -> {
             // Panggil method yang udah direname jadi saveDataUser
-            String result = userController.saveDataUser(
+            String result = userHandler.saveDataUser(
                 txtName.getText(), txtEmail.getText(), txtPass.getText(), 
-                txtConfirmPass.getText(), txtPhone.getText(), txtAddress.getText(), ""
+                txtConfirmPass.getText(), txtPhone.getText(), txtAddress.getText()
             );
 
             if (result.equals("Success")) {

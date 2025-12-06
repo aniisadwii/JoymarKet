@@ -9,7 +9,7 @@ import model.Customer;
 import model.Admin;
 import model.Courier;
 
-public class UserController {
+public class UserHandler {
     
     private Connect db = Connect.getInstance();
 
@@ -59,7 +59,7 @@ public class UserController {
     }
     // Validasi Register Customer (Sesuai Soal)
     // Return String kosong kalau sukses, return error message kalau gagal
-    public String saveDataUser(String fullName, String email, String password, String confirmPass, String phone, String address, String gender) {
+    public String saveDataUser(String fullName, String email, String password, String confirmPass, String phone, String address) {
         // 1. Full Name: Cannot be empty
         if (fullName.isEmpty()) return "Full name cannot be empty";
 
@@ -99,7 +99,7 @@ public class UserController {
         return "Success";
     }
     
-    public String updateProfile(String idUser, String newName, String newPhone, String newAddress) {
+    public String editProfile(String idUser, String newName, String newPhone, String newAddress) {
         // 1. Validasi Input (Sesuai Soal)
         if (newName.isEmpty()) return "Name cannot be empty";
         if (newAddress.isEmpty()) return "Address cannot be empty";
