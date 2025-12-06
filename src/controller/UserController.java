@@ -59,7 +59,7 @@ public class UserController {
     }
     // Validasi Register Customer (Sesuai Soal)
     // Return String kosong kalau sukses, return error message kalau gagal
-    public String registerCustomer(String fullName, String email, String password, String confirmPass, String phone, String address, String gender) {
+    public String saveDataUser(String fullName, String email, String password, String confirmPass, String phone, String address, String gender) {
         // 1. Full Name: Cannot be empty
         if (fullName.isEmpty()) return "Full name cannot be empty";
 

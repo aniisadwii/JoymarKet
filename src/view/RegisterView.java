@@ -32,15 +32,27 @@ public class RegisterView {
         Label lblMsg = new Label();
 
         btnSubmit.setOnAction(e -> {
-            String result = userController.registerCustomer(
+            // Panggil method yang udah direname jadi saveDataUser
+            String result = userController.saveDataUser(
                 txtName.getText(), txtEmail.getText(), txtPass.getText(), 
                 txtConfirmPass.getText(), txtPhone.getText(), txtAddress.getText(), ""
-            ); // Parameter gender gue kosongin krn revisi aslab
+            );
 
             if (result.equals("Success")) {
-                lblMsg.setStyle("-fx-text-fill: green;");
-                lblMsg.setText("Register Berhasil! Silakan Login.");
+                // Sesuai Activity Diagram: Display success message -> Display Login Form
+                
+                // 1. Tampilin Alert Success (Biar lebih kerasa "Display Message"-nya)
+                Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                alert.setTitle("Message");
+                alert.setHeaderText(null);
+                alert.setContentText("Register Berhasil! Silakan Login.");
+                alert.showAndWait();
+
+                // 2. Pindah ke Login Form
+                new LoginView(stage);
+                
             } else {
+                // Sesuai Activity Diagram: Display error message
                 lblMsg.setStyle("-fx-text-fill: red;");
                 lblMsg.setText(result);
             }
