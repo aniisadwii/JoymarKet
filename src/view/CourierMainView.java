@@ -1,17 +1,15 @@
 package view;
 
 import controller.DeliveryHandler;
-import javafx.geometry.Insets;
+import javafx.geometry.*;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
 import javafx.stage.Stage;
 import model.Order;
 import util.Session;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 public class CourierMainView {
     private Stage stage;

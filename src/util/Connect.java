@@ -26,10 +26,10 @@ public class Connect {
             Class.forName("com.mysql.cj.jdbc.Driver");
             con = DriverManager.getConnection(CONNECTION, USERNAME, PASSWORD);
             st = con.createStatement();
-            System.out.println("Database Connected! Menyala abangkuh 🔥");
+            System.out.println("Database connected successfully.");
         } catch (Exception e) {
             e.printStackTrace();
-            System.out.println("Waduh, gagal connect bestie :(");
+            System.out.println("Failed to connect to the database.");
         }
     }
 

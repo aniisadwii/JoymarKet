@@ -4,7 +4,7 @@ import controller.OrderHandler;
 import javafx.geometry.*;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
 import model.Order;
 import java.util.List;
 

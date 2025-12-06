@@ -1,9 +1,9 @@
 package view;
 
 import controller.ProductHandler;
-import javafx.geometry.Insets;
+import javafx.geometry.*;
 import javafx.scene.control.*;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
 import model.Product;
 import java.util.List;
 

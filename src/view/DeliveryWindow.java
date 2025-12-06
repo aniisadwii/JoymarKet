@@ -1,14 +1,12 @@
 package view;
 
 import controller.DeliveryHandler;
-import javafx.geometry.Insets;
+import javafx.geometry.*;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
 import model.Order;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 public class DeliveryWindow {
     

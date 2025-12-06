@@ -1,10 +1,10 @@
 package view;
 
 import controller.CourierHandler;
-import javafx.geometry.Insets;
+import javafx.geometry.*;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
 import model.Courier;
 import java.util.List;
 
