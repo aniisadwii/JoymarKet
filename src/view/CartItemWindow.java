@@ -1,11 +1,9 @@
 package view;
 
 import controller.CartItemHandler;
-import javafx.geometry.Insets;
-import javafx.geometry.Pos;
+import javafx.geometry.*;
 import javafx.scene.control.*;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
 import model.CartItem;
 import model.Product;
 import util.Session;

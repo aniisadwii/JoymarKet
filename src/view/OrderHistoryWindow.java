@@ -1,8 +1,7 @@
 package view;
 
 import controller.OrderHandler; // Sesuai Class Diagram
-import javafx.geometry.Insets;
-import javafx.geometry.Pos;
+import javafx.geometry.*;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
