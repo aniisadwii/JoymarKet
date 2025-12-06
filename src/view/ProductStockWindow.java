@@ -1,10 +1,12 @@
 package view;
 
 import controller.ProductHandler;
-import javafx.geometry.*;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.scene.layout.*;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 import model.Product;
 import java.util.Optional;
 
@@ -22,10 +24,9 @@ public class ProductStockWindow {
         layout = new VBox(10);
         layout.setPadding(new Insets(10));
 
-        Label lblTitle = new Label("Manage Product Stock 📦");
+        Label lblTitle = new Label("Manage Product Stock");
         lblTitle.setStyle("-fx-font-weight: bold; -fx-font-size: 14px;");
 
-        // Tabel Produk
         table = new TableView<>();
         
         TableColumn<Product, String> colName = new TableColumn<>("Product Name");
@@ -40,48 +41,41 @@ public class ProductStockWindow {
         table.getColumns().addAll(colName, colStock, colPrice);
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
         
-        // Load Data Awal
         refreshTable();
 
-        // Tombol Update (Refresh Manual DIHAPUS)
-        Button btnUpdate = new Button("Update Stock ✏️");
+        Button btnUpdate = new Button("Update Stock");
         
         btnUpdate.setOnAction(e -> {
             Product selected = table.getSelectionModel().getSelectedItem();
             if (selected == null) {
-                showAlert(Alert.AlertType.WARNING, "Pilih produk yang mau diupdate stoknya!");
+                showAlert(Alert.AlertType.WARNING, "Please select a product to update");
                 return;
             }
             
-            // Logic Dialog
             TextInputDialog dialog = new TextInputDialog(String.valueOf(selected.getStock()));
             dialog.setTitle("Update Stock");
-            dialog.setHeaderText("Update stok untuk: " + selected.getName());
-            dialog.setContentText("Stok Baru:");
+            dialog.setHeaderText("Update stock for: " + selected.getName());
+            dialog.setContentText("New Stock:");
             
             Optional<String> result = dialog.showAndWait();
             result.ifPresent(stockStr -> {
-                // Validasi manual (No Regex)
                 if (!isNumeric(stockStr)) {
-                    showAlert(Alert.AlertType.ERROR, "Stok harus angka valid!");
+                    showAlert(Alert.AlertType.ERROR, "Stock must be a valid number");
                     return;
                 }
                 
                 int newStock = Integer.parseInt(stockStr);
-                
-                // Panggil Method Handler
                 String status = productHandler.editProductStock(selected.getIdProduct(), newStock);
                 
                 if (status.equals("Success")) {
-                    showAlert(Alert.AlertType.INFORMATION, "Stok berhasil diupdate!");
-                    refreshTable(); // <--- INI SUDAH CUKUP BUAT UPDATE TABEL
+                    showAlert(Alert.AlertType.INFORMATION, "Stock updated successfully");
+                    refreshTable(); 
                 } else {
                     showAlert(Alert.AlertType.ERROR, status);
                 }
             });
         });
         
-        // HBox Actions (Cuma isi btnUpdate aja sekarang)
         HBox actions = new HBox(10, btnUpdate);
         actions.setAlignment(Pos.CENTER_LEFT);
         

@@ -1,9 +1,11 @@
 package view;
 
 import controller.CartItemHandler;
-import javafx.geometry.*;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.control.*;
-import javafx.scene.layout.*;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 import model.CartItem;
 import model.Product;
 import util.Session;
@@ -17,21 +19,18 @@ public class CartItemWindow {
     private CartItem cartItem; 
     private boolean isEditMode = false;
     
-    // Ini Variabel buat nyimpen "Perintah Refresh" dari luar
     private Runnable onUpdateSuccess; 
 
-    // Constructor ADD (Gak berubah banyak)
     public CartItemWindow(Product product) {
         this.product = product;
         this.isEditMode = false;
         initialize();
     }
 
-    // Constructor EDIT (Update dikit biar nerima Runnable)
     public CartItemWindow(CartItem cartItem, Runnable onUpdateSuccess) {
         this.cartItem = cartItem;
         this.isEditMode = true;
-        this.onUpdateSuccess = onUpdateSuccess; // Simpan perintahnya
+        this.onUpdateSuccess = onUpdateSuccess; 
         initialize();
     }
 
@@ -61,7 +60,7 @@ public class CartItemWindow {
         btnAction.setOnAction(e -> {
             String qtyStr = txtQty.getText();
             if (!isNumeric(qtyStr)) {
-                showAlert(Alert.AlertType.ERROR, "Error", "Input harus angka!");
+                showAlert(Alert.AlertType.ERROR, "Error", "Input must be a valid number");
                 return;
             }
 
@@ -76,13 +75,11 @@ public class CartItemWindow {
             }
 
             if (status.equals("Success")) {
-                showAlert(Alert.AlertType.INFORMATION, "Success", isEditMode ? "Jumlah berhasil diupdate!" : "Berhasil masuk keranjang! 🛒");
+                showAlert(Alert.AlertType.INFORMATION, "Success", isEditMode ? "Quantity updated successfully" : "Successfully added to cart");
                 
                 if (!isEditMode) {
                     txtQty.setText(""); 
                 } else {
-                    // --- MAGIC HAPPENS HERE ---
-                    // Kalau mode edit & sukses, jalanin perintah refresh punya CartView
                     if (onUpdateSuccess != null) {
                         onUpdateSuccess.run(); 
                     }

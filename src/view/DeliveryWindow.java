@@ -4,12 +4,12 @@ import controller.DeliveryHandler;
 import javafx.geometry.Insets;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.scene.layout.*;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 import model.Order;
 import java.util.List;
 import java.util.Optional;
 
-// RENAME CLASS JADI DeliveryWindow (Sesuai Sequence Diagram)
 public class DeliveryWindow {
     
     private DeliveryHandler deliveryHandler = new DeliveryHandler();
@@ -24,10 +24,9 @@ public class DeliveryWindow {
         layout = new VBox(10);
         layout.setPadding(new Insets(10));
 
-        Label lblTitle = new Label("Incoming Orders (Pending) 📦");
+        Label lblTitle = new Label("Incoming Orders (Pending)");
         lblTitle.setStyle("-fx-font-weight: bold; -fx-font-size: 14px;");
 
-        // Tabel Order (Sama Persis)
         table = new TableView<>();
         TableColumn<Order, String> colId = new TableColumn<>("Order ID");
         colId.setCellValueFactory(new PropertyValueFactory<>("idOrder"));
@@ -43,40 +42,34 @@ public class DeliveryWindow {
         
         refreshTable();
 
-        Button btnAssign = new Button("Assign to Courier 🛵");
+        Button btnAssign = new Button("Assign to Courier");
         Button btnRefresh = new Button("Refresh Data");
 
-        // LOGIC TOMBOL ASSIGN (Diupdate)
         btnAssign.setOnAction(e -> {
             Order selectedOrder = table.getSelectionModel().getSelectedItem();
             if (selectedOrder == null) {
-                showAlert(Alert.AlertType.WARNING, "Pilih Order dulu!");
+                showAlert(Alert.AlertType.WARNING, "Please select an Order first");
                 return;
             }
 
             List<String> couriers = deliveryHandler.getCouriersList();
             if (couriers.isEmpty()) {
-                showAlert(Alert.AlertType.ERROR, "Gak ada kurir yang tersedia!");
+                showAlert(Alert.AlertType.ERROR, "No couriers available");
                 return;
             }
 
             ChoiceDialog<String> dialog = new ChoiceDialog<>(couriers.get(0), couriers);
             dialog.setTitle("Assign Order");
-            dialog.setHeaderText("Pilih Kurir untuk order " + selectedOrder.getIdOrder());
+            dialog.setHeaderText("Select Courier for Order " + selectedOrder.getIdOrder());
             dialog.setContentText("Courier:");
 
             Optional<String> result = dialog.showAndWait();
             result.ifPresent(selectedCourierString -> {
-                // --- PERUBAHAN DI SINI ---
-                // View yang bertugas "Membersihkan" input sebelum dikirim ke Controller
-                // Format string: "CO001 - Budi" -> Kita ambil "CO001"
                 String idCourier = selectedCourierString.split(" - ")[0];
-
-                // Kirim ID murni ke Controller
                 String status = deliveryHandler.assignCourierToOrder(selectedOrder.getIdOrder(), idCourier);
                 
                 if (status.equals("Success")) {
-                    showAlert(Alert.AlertType.INFORMATION, "Berhasil! Kurir meluncur.");
+                    showAlert(Alert.AlertType.INFORMATION, "Success! Courier assigned.");
                     refreshTable(); 
                 }
             });

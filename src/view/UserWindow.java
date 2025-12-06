@@ -10,13 +10,11 @@ import javafx.stage.Stage;
 import model.User;
 import util.Session;
 
-// RENAME CLASS: Sesuai Sequence Diagram (UserWindow)
 public class UserWindow {
     
-    private Stage stage; // Stage baru (pop-up)
+    private Stage stage; 
     private UserHandler userHandler = new UserHandler();
 
-    // Constructor kosong (karena ini window baru/popup)
     public UserWindow() {
         this.stage = new Stage();
         initialize();
@@ -28,7 +26,6 @@ public class UserWindow {
         Label lblTitle = new Label("Edit Profile");
         lblTitle.setStyle("-fx-font-size: 18px; -fx-font-weight: bold;");
 
-        // Input Fields (Diisi data lama)
         TextField txtName = new TextField(user.getFullName());
         txtName.setPromptText("Full Name");
         
@@ -39,11 +36,10 @@ public class UserWindow {
         txtAddress.setPromptText("Address");
         txtAddress.setPrefHeight(80);
 
-        Button btnSave = new Button("Save Changes 💾");
+        Button btnSave = new Button("Save Changes");
         Label lblMsg = new Label();
 
         btnSave.setOnAction(e -> {
-            // Panggil UserHandler.editProfile
             String result = userHandler.editProfile(
                 user.getIdUser(),
                 txtName.getText(),
@@ -52,8 +48,8 @@ public class UserWindow {
             );
 
             if (result.equals("Success")) {
-                showAlert(Alert.AlertType.INFORMATION, "Success", "Profil berhasil diupdate! Data akan berubah setelah relogin.");
-                stage.close(); // Tutup window
+                showAlert(Alert.AlertType.INFORMATION, "Success", "Profile updated successfully! Changes will be applied after re-login.");
+                stage.close(); 
             } else {
                 lblMsg.setText(result);
                 lblMsg.setStyle("-fx-text-fill: red;");
@@ -68,7 +64,7 @@ public class UserWindow {
         Scene scene = new Scene(layout, 350, 400);
         stage.setScene(scene);
         stage.setTitle("JoyMarket - Edit Profile");
-        stage.show(); // Tampilkan sebagai window baru
+        stage.show();
     }
 
     private void showAlert(Alert.AlertType type, String title, String content) {

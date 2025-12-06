@@ -19,7 +19,9 @@ public class LoginView {
 
     private void initialize() {
         // Components
-        Label lblTitle = new Label("JoyMarKet Login");
+        Label lblTitle = new Label("JoyMarket Login");
+        lblTitle.setStyle("-fx-font-size: 20px; -fx-font-weight: bold;");
+        
         TextField txtEmail = new TextField();
         txtEmail.setPromptText("Email");
         
@@ -28,6 +30,7 @@ public class LoginView {
         
         Button btnLogin = new Button("Login");
         Button btnRegister = new Button("Register Here");
+        
         Label lblError = new Label();
         lblError.setStyle("-fx-text-fill: red;");
 
@@ -39,7 +42,7 @@ public class LoginView {
             model.User user = userHandler.login(email, pass);
             
             if (user != null) {
-                // Cek Role dan Arahkan
+                // Check Role and Redirect
                 if (user.getRole().equals("Customer")) {
                     new CustomerWindow(stage);
                 } else if (user.getRole().equals("Admin")) {
@@ -47,21 +50,19 @@ public class LoginView {
                 } else if (user.getRole().equals("Courier")) {
                     new CourierMainView(stage); 
                 } else {
-                    // Jaga-jaga kalau ada role Courier nanti
-                    lblError.setText("Role tidak dikenali!");
+                    lblError.setText("Unknown Role");
                 }
             } else {
-                lblError.setText("Email atau Password salah bestie :(");
+                lblError.setText("Invalid Email or Password");
             }
         });
 
         btnRegister.setOnAction(e -> {
-            // Pindah ke Register View
             new RegisterView(stage);
         });
 
         // Layout
-        VBox root = new VBox(10); // Spacing 10
+        VBox root = new VBox(10);
         root.setAlignment(Pos.CENTER);
         root.getChildren().addAll(lblTitle, txtEmail, txtPass, btnLogin, btnRegister, lblError);
 

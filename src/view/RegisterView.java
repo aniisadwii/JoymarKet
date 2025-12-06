@@ -1,7 +1,7 @@
 package view;
 
 import controller.UserHandler;
-import javafx.geometry.*;
+import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
@@ -19,6 +19,7 @@ public class RegisterView {
 
     private void initialize() {
         Label lblTitle = new Label("Register Customer");
+        lblTitle.setStyle("-fx-font-size: 18px; -fx-font-weight: bold;");
         
         TextField txtName = new TextField(); txtName.setPromptText("Full Name");
         TextField txtEmail = new TextField(); txtEmail.setPromptText("Email");
@@ -32,27 +33,20 @@ public class RegisterView {
         Label lblMsg = new Label();
 
         btnSubmit.setOnAction(e -> {
-            // Panggil method yang udah direname jadi saveDataUser
             String result = userHandler.saveDataUser(
                 txtName.getText(), txtEmail.getText(), txtPass.getText(), 
                 txtConfirmPass.getText(), txtPhone.getText(), txtAddress.getText()
             );
 
             if (result.equals("Success")) {
-                // Sesuai Activity Diagram: Display success message -> Display Login Form
-                
-                // 1. Tampilin Alert Success (Biar lebih kerasa "Display Message"-nya)
                 Alert alert = new Alert(Alert.AlertType.INFORMATION);
                 alert.setTitle("Message");
                 alert.setHeaderText(null);
-                alert.setContentText("Register Berhasil! Silakan Login.");
+                alert.setContentText("Registration Successful! Please Login.");
                 alert.showAndWait();
 
-                // 2. Pindah ke Login Form
                 new LoginView(stage);
-                
             } else {
-                // Sesuai Activity Diagram: Display error message
                 lblMsg.setStyle("-fx-text-fill: red;");
                 lblMsg.setText(result);
             }
