@@ -58,7 +58,7 @@ public class LoginView {
         });
 
         btnRegister.setOnAction(e -> {
-            new RegisterView(stage);
+            new UserWindow(stage);
         });
 
         // Layout

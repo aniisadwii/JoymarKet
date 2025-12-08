@@ -46,20 +46,20 @@ public class AdminMainView {
         tabOrders.setContent(deliveryWindow.getView());                   
         
         Tab tabStock = new Tab("Manage Stock");
-        ProductStockWindow stockWindow = new ProductStockWindow();
-        tabStock.setContent(stockWindow.getView());
+        ProductWindow productWindow = new ProductWindow();
+        tabStock.setContent(productWindow.getView());
         
         Tab tabCouriers = new Tab("Couriers");
         CourierWindow courierWindow = new CourierWindow();
         tabCouriers.setContent(courierWindow.getView());
         
         Tab tabAllOrders = new Tab("All Orders History");
-        AllOrdersWindow allOrdersWindow = new AllOrdersWindow(); 
-        tabAllOrders.setContent(allOrdersWindow.getView());
+        OrderHeaderWindow allOrdersView = new OrderHeaderWindow();
+        tabAllOrders.setContent(allOrdersView.getView());
         
         tabPane.getSelectionModel().selectedItemProperty().addListener((obs, oldTab, newTab) -> {
             if (newTab == tabAllOrders) {
-                allOrdersWindow.refresh();
+            	allOrdersView.refreshData();
             }
         });
         

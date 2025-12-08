@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import model.CartItem;
 import model.Customer;
-import model.Order;
+import model.OrderHeader;
 import model.Promo;
 import util.Connect;
 import util.Session;
@@ -15,6 +15,7 @@ public class OrderHandler {
     
     private Connect db = Connect.getInstance();
     private CartItemHandler cartHandler = new CartItemHandler(); 
+    private PromoHandler promoHandler = new PromoHandler();
 
     // GANTI PARAMETER SESUAI CLASS DIAGRAM: checkout(idOrder, idPromo)
     // idCustomer kita ambil dari Session (implisit)
@@ -42,7 +43,7 @@ public class OrderHandler {
         String finalIdPromo = null; // Ini ID Promo buat database
         
         if (idPromo != null && !idPromo.isEmpty()) {
-            Promo promo = getPromo(idPromo); // Cek based on Code
+            Promo promo = promoHandler.getPromo(idPromo); // Cek based on Code
             if (promo == null) return "Invalid Promo Code!";
             
             double discount = totalAmount * (promo.getDiscountPercentage() / 100.0);
@@ -85,15 +86,19 @@ public class OrderHandler {
         return "Success";
     }
     
-    public List<Order> getCustomerOrders(String idCustomer) {
-        List<Order> orders = new ArrayList<>();
-        // Ambil semua order milik customer ini, urutkan dari yang terbaru
+ // method ini sesuai dengan class diagram: getCustomerOrders(idCustomer)
+    // method ini juga mengimplementasikan flow 'Fetch order history list' pada activity diagram
+    public List<OrderHeader> getCustomerOrders(String idCustomer) {
+        List<OrderHeader> orders = new ArrayList<>();
+        
+        // query untuk mengambil data order header milik customer tertentu
         String query = String.format("SELECT * FROM OrderHeaders WHERE idCustomer = '%s' ORDER BY orderedAt DESC", idCustomer);
         ResultSet rs = db.execQuery(query);
         
         try {
+            // looping hasil query (ini merepresentasikan loop yang ada di sequence diagram)
             while (rs.next()) {
-                orders.add(new Order(
+                orders.add(new OrderHeader(
                     rs.getString("idOrder"),
                     rs.getString("idCustomer"),
                     rs.getDouble("totalAmount"),
@@ -107,16 +112,65 @@ public class OrderHandler {
         return orders;
     }
     
+ // Fungsinya buat validasi atau ambil detail 1 order spesifik punya customer tertentu
+    public OrderHeader getCustomerOrderHeader(String idOrder, String idCustomer) {
+        String query = String.format("SELECT * FROM OrderHeaders WHERE idOrder = '%s' AND idCustomer = '%s'", idOrder, idCustomer);
+        ResultSet rs = db.execQuery(query);
+        
+        try {
+            if (rs.next()) {
+                return new OrderHeader(
+                    rs.getString("idOrder"),
+                    rs.getString("idCustomer"),
+                    rs.getDouble("totalAmount"),
+                    rs.getString("status"),
+                    rs.getTimestamp("orderedAt")
+                );
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+    
+ // Mengambil detail barang (Product Name, Price, Qty) dari tabel OrderDetails & Products
+    public List<CartItem> getOrderItems(String idOrder) {
+        List<CartItem> items = new ArrayList<>();
+        
+        // Query JOIN: Ambil data qty dari OrderDetails, dan Nama/Harga dari Products
+        String query = "SELECT p.idProduct, p.name, p.price, od.qty " +
+                       "FROM OrderDetails od " +
+                       "JOIN Products p ON od.idProduct = p.idProduct " +
+                       "WHERE od.idOrder = '" + idOrder + "'";
+        
+        ResultSet rs = db.execQuery(query);
+        
+        try {
+            while (rs.next()) {
+                // Kita "pinjam" model CartItem buat nampung data ini biar gampang ditampilin
+                items.add(new CartItem(
+                    rs.getString("idProduct"),
+                    rs.getString("name"),
+                    rs.getDouble("price"),
+                    rs.getInt("qty")
+                ));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return items;
+    }
+    
  // === METHOD BARU: Sesuai Class Diagram "getAllOrders" ===
-    public List<Order> getAllOrders() {
-        List<Order> orders = new ArrayList<>();
+    public List<OrderHeader> getAllOrders() {
+        List<OrderHeader> orders = new ArrayList<>();
         // Ambil SEMUA data dari tabel OrderHeaders
         String query = "SELECT * FROM OrderHeaders";
         ResultSet rs = db.execQuery(query);
         
         try {
             while (rs.next()) {
-                orders.add(new Order(
+                orders.add(new OrderHeader(
                     rs.getString("idOrder"),
                     rs.getString("idCustomer"),
                     rs.getDouble("totalAmount"),
@@ -128,18 +182,6 @@ public class OrderHandler {
             e.printStackTrace();
         }
         return orders;
-    }
-
-    // Helper methods (Copy paste aja yang lama)
-    private Promo getPromo(String code) {
-        String query = "SELECT * FROM Promos WHERE code = '" + code + "'";
-        ResultSet rs = db.execQuery(query);
-        try {
-            if (rs.next()) {
-                return new Promo(rs.getString("idPromo"), rs.getString("code"), rs.getDouble("discountPercentage"));
-            }
-        } catch (SQLException e) { e.printStackTrace(); }
-        return null;
     }
     
     private int getProductStock(String productId) {

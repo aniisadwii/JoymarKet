@@ -6,14 +6,12 @@ import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.*;
 import model.Courier;
-import java.util.List;
 
 public class CourierWindow {
     
     private CourierHandler courierHandler = new CourierHandler();
     private VBox layout;
 
-    // Constructor Kosong (Dipanggil AdminMainView)
     public CourierWindow() {
         initialize();
     }
@@ -25,7 +23,7 @@ public class CourierWindow {
         Label lblTitle = new Label("Courier List 🛵");
         lblTitle.setStyle("-fx-font-weight: bold; -fx-font-size: 14px;");
 
-        // Tabel Kurir (Modelnya Courier)
+        // --- Setup Tabel (Sama kayak sebelumnya) ---
         TableView<Courier> table = new TableView<>();
         
         TableColumn<Courier, String> colId = new TableColumn<>("ID");
@@ -46,15 +44,67 @@ public class CourierWindow {
         table.getColumns().addAll(colId, colName, colPhone, colVehicle, colPlate);
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
         
-        // Load Data dari CourierHandler
-        List<Courier> couriers = courierHandler.getAllCouriers();
-        table.getItems().setAll(couriers);
+        // Load Data Awal (Pakai getAllCouriers)
+        refreshTable(table);
         
-        layout.getChildren().addAll(lblTitle, table);
+        // --- TOMBOL BARU: VIEW DETAILS ---
+        Button btnDetail = new Button("View Details");
+        Button btnRefresh = new Button("Refresh");
+
+        // Logic Tombol View Details
+        // Di sinilah method getCourier(id) dipanggil!
+        btnDetail.setOnAction(e -> {
+            Courier selected = table.getSelectionModel().getSelectedItem();
+            if (selected == null) {
+                showAlert(Alert.AlertType.WARNING, "Please select a courier first");
+                return;
+            }
+
+            // 1. Panggil Controller buat ambil data spesifik (Fresh from DB)
+            // Ini ngebuktiin method getCourier kepake!
+            Courier detail = courierHandler.getCourier(selected.getIdUser());
+            
+            if (detail != null) {
+                // 2. Tampilkan Info Lengkap
+                String info = "Courier Profile:\n\n" +
+                              "ID: " + detail.getIdUser() + "\n" +
+                              "Name: " + detail.getFullName() + "\n" +
+                              "Email: " + detail.getEmail() + "\n" +
+                              "Phone: " + detail.getPhone() + "\n" +
+                              "Address: " + detail.getAddress() + "\n" +
+                              "--------------------------\n" +
+                              "Vehicle: " + detail.getVehicleType() + "\n" +
+                              "Plate: " + detail.getVehiclePlate();
+                              
+                showAlert(Alert.AlertType.INFORMATION, "Courier Details", info);
+            } else {
+                showAlert(Alert.AlertType.ERROR, "Error", "Failed to fetch data.");
+            }
+        });
+
+        btnRefresh.setOnAction(e -> refreshTable(table));
+
+        HBox actions = new HBox(10, btnDetail, btnRefresh);
+        layout.getChildren().addAll(lblTitle, table, actions);
     }
 
-    // Method ini Wajib ada buat ditempel di TabPane
     public VBox getView() {
         return layout;
+    }
+    
+    private void refreshTable(TableView<Courier> table) {
+        table.getItems().setAll(courierHandler.getAllCouriers());
+    }
+    
+    // Method overloading biar praktis
+    private void showAlert(Alert.AlertType type, String content) {
+        showAlert(type, "Message", content);
+    }
+
+    private void showAlert(Alert.AlertType type, String title, String content) {
+        Alert alert = new Alert(type);
+        alert.setTitle(title);
+        alert.setContentText(content);
+        alert.show();
     }
 }

@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import model.Courier;
-import model.Order;
 import util.Connect;
 
 public class CourierHandler {
@@ -46,56 +45,33 @@ public class CourierHandler {
         }
         return couriers;
     }
-
-    // 1. Ambil Kerjaan Kurir (Order yang di-assign ke dia)
-    public List<Order> getMyJobs(String courierId) {
-        List<Order> jobs = new ArrayList<>();
-        
-        // Kita JOIN antara Deliveries & OrderHeaders
-        // Biar tau Order mana aja yang harus diantar si courierId
-        String query = "SELECT o.* FROM OrderHeaders o " +
-                       "JOIN Deliveries d ON o.idOrder = d.idOrder " +
-                       "WHERE d.idCourier = '" + courierId + "' " +
-                       "AND o.status = 'In Progress'"; // Kita tampilin yang lagi jalan aja
+    
+ // Return: Object Courier (Single)
+    public Courier getCourier(String idCourier) {
+        String query = "SELECT u.idUser, u.fullName, u.email, u.password, u.phone, u.address, " +
+                       "c.vehicleType, c.vehiclePlate " +
+                       "FROM Users u " +
+                       "JOIN Couriers c ON u.idUser = c.idCourier " + 
+                       "WHERE u.idUser = '" + idCourier + "'";
         
         ResultSet rs = db.execQuery(query);
+        
         try {
-            while (rs.next()) {
-                jobs.add(new Order(
-                    rs.getString("idOrder"),
-                    rs.getString("idCustomer"),
-                    rs.getDouble("totalAmount"),
-                    rs.getString("status"),
-                    rs.getTimestamp("orderedAt")
-                ));
+            if (rs.next()) {
+                return new Courier(
+                    rs.getString("idUser"),
+                    rs.getString("fullName"),
+                    rs.getString("email"),
+                    rs.getString("password"),
+                    rs.getString("phone"),
+                    rs.getString("address"),
+                    rs.getString("vehicleType"),
+                    rs.getString("vehiclePlate")
+                );
             }
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        return jobs;
+        return null;
     }
-    
- // 2. Update Status (Bisa Pending, In Progress, atau Delivered)
-    public void updateStatus(String orderId, String newStatus) {
-        // Update di OrderHeaders
-        String queryOrder = String.format("UPDATE OrderHeaders SET status = '%s' WHERE idOrder = '%s'", newStatus, orderId);
-        db.execUpdate(queryOrder);
-        
-        // Update di Deliveries juga biar sinkron
-        String queryDelivery = String.format("UPDATE Deliveries SET status = '%s' WHERE idOrder = '%s'", newStatus, orderId);
-        db.execUpdate(queryDelivery);
-    }
-
-//    // 2. Update Status Jadi Delivered
-//    public String completeDelivery(String orderId) {
-//        // Update di OrderHeaders
-//        String queryOrder = String.format("UPDATE OrderHeaders SET status = 'Delivered' WHERE idOrder = '%s'", orderId);
-//        db.execUpdate(queryOrder);
-//        
-//        // Update di Deliveries juga biar sinkron
-//        String queryDelivery = String.format("UPDATE Deliveries SET status = 'Delivered' WHERE idOrder = '%s'", orderId);
-//        db.execUpdate(queryDelivery);
-//
-//        return "Success";
-//    }
 }

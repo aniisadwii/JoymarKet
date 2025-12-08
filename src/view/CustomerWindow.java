@@ -10,7 +10,9 @@ import model.Customer;
 import util.Session;
 import java.util.Optional;
 
+// nama kelas ini sesuai dengan lifeline 'customerwindow' di sequence diagram
 public class CustomerWindow {
+    
     private Stage stage;
     private CustomerHandler customerHandler = new CustomerHandler(); 
 
@@ -25,37 +27,47 @@ public class CustomerWindow {
         Label lblWelcome = new Label("Welcome, " + customer.getFullName());
         lblWelcome.setStyle("-fx-font-size: 18px; -fx-font-weight: bold;");
 
+        // label saldo yang bakal berubah realtime
         Label lblBalance = new Label("Balance: Rp " + customer.getBalance());
         lblBalance.setStyle("-fx-font-size: 14px; -fx-text-fill: green;");
         
         Button btnTopUp = new Button("Top Up");
+        
+        // logic tombol top up (activity diagram: press top up button)
         btnTopUp.setOnAction(e -> {
+            // activity diagram: display top up form
             TextInputDialog dialog = new TextInputDialog();
             dialog.setTitle("Top Up Balance");
             dialog.setHeaderText("Enter Top Up Amount (Min. 10.000)");
             dialog.setContentText("Amount:");
 
+            // activity diagram: fill form & press ok
             Optional<String> result = dialog.showAndWait();
             result.ifPresent(amountStr -> {
+                
+                // panggil controller (sequence diagram message 1: topupbalance)
                 String status = customerHandler.topUpBalance(amountStr); 
                 
+                // activity diagram: decision node (valid/invalid)
                 if (status.equals("Success")) {
+                    // flow yes: update label saldo dan tampilkan pesan sukses
                     lblBalance.setText("Balance: Rp " + customer.getBalance()); 
                     showAlert(Alert.AlertType.INFORMATION, "Success", "Top Up Successful");
                 } else {
+                    // flow no: tampilkan error message
                     showAlert(Alert.AlertType.ERROR, "Failed", status);
                 }
             });
         });
 
         Button btnViewCart = new Button("View Cart");
-        btnViewCart.setOnAction(e -> new OrderHeaderWindow(stage));
+        btnViewCart.setOnAction(e -> new CartItemWindow(stage));
         
         Button btnEditProfile = new Button("Edit Profile");
         btnEditProfile.setOnAction(e -> new UserWindow());
         
         Button btnHistory = new Button("Order History");
-        btnHistory.setOnAction(e -> new OrderHistoryWindow(stage));
+        btnHistory.setOnAction(e -> new OrderHeaderWindow(stage));
         
         Button btnLogout = new Button("Logout");
         btnLogout.setOnAction(e -> {
@@ -69,6 +81,7 @@ public class CustomerWindow {
         topLayout.setStyle("-fx-background-color: #f0f0f0;");
         topLayout.getChildren().addAll(lblWelcome, balanceBox, btnViewCart, btnHistory, btnEditProfile, btnLogout);
 
+        // menampilkan list produk di bagian tengah (reusable view productwindow)
         ProductWindow productWindow = new ProductWindow();
         
         BorderPane root = new BorderPane();
