@@ -8,36 +8,52 @@ public class OrderDetail {
     private String idProduct;
     private int qty;
 
+    // konstruktor ini berfungsi untuk menginisialisasi objek detail pesanan yang berisi relasi antara id pesanan, produk, dan jumlahnya
     public OrderDetail(String idOrder, String idProduct, int qty) {
         this.idOrder = idOrder;
         this.idProduct = idProduct;
         this.qty = qty;
     }
     
-    // 1. createOrderDetail(idOrder, idProduct, qty)
+    // --- metode stub (kerangka) sesuai diagram kelas ---
 
-    // Isinya kita kosongin aja karena logic INSERT sebenarnya sudah dijalankan oleh OrderHandler.
+    // metode ini disediakan agar struktur kelas sesuai dengan rancangan diagram, namun logika penyimpanan data detail pesanan ke database sepenuhnya ditangani oleh orderhandler
     public void createOrderDetail(String idOrder, String idProduct, int qty) {
     	
     }
 
-    // 2. getOrderDetail(idOrder, idProduct)
+    // metode ini merepresentasikan fungsi pengambilan data detail pesanan, implementasi query select dijalankan di sisi controller
     public OrderDetail getOrderDetail(String idOrder, String idProduct) {
         return null; 
     }
 
-    // 3. getCustomerOrderDetail(idOrder, idProduct)
+    // metode ini berfungsi sebagai representasi pengambilan detail pesanan khusus pelanggan, logika pencariannya didelegasikan ke handler
     public OrderDetail getCustomerOrderDetail(String idOrder, String idProduct) {
         return null;
     }
 
-    // Getters & Setters
-    public String getIdOrder() { return idOrder; }
-    public void setIdOrder(String idOrder) { this.idOrder = idOrder; }
+    // --- getter dan setter ---
+	public String getIdOrder() {
+		return idOrder;
+	}
 
-    public String getIdProduct() { return idProduct; }
-    public void setIdProduct(String idProduct) { this.idProduct = idProduct; }
+	public void setIdOrder(String idOrder) {
+		this.idOrder = idOrder;
+	}
 
-    public int getQty() { return qty; }
-    public void setQty(int qty) { this.qty = qty; }
+	public String getIdProduct() {
+		return idProduct;
+	}
+
+	public void setIdProduct(String idProduct) {
+		this.idProduct = idProduct;
+	}
+
+	public int getQty() {
+		return qty;
+	}
+
+	public void setQty(int qty) {
+		this.qty = qty;
+	}
 }

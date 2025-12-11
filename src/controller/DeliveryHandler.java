@@ -13,10 +13,9 @@ public class DeliveryHandler {
     
     private Connect db = Connect.getInstance();
     
- // === FITUR ASSIGN COURIER (ADMIN) ===
+    // === FITUR ADMIN ===
 
-    // Method 1: Sesuai Sequence Diagram Message 1 (getOrderHeader)
-    // Fungsinya mengambil detail 1 order spesifik.
+    // method ini untuk ambil detail order berdasarkan id
     public OrderHeader getOrderHeader(String idOrder) {
         String query = "SELECT * FROM OrderHeaders WHERE idOrder = '" + idOrder + "'";
         ResultSet rs = db.execQuery(query);
@@ -34,25 +33,23 @@ public class DeliveryHandler {
         return null;
     }
     
- // Method 2: Sesuai Class Diagram (assignCourierToOrder)
-    // Method ini mengimplementasikan Sequence Diagram Message 2 (createDelivery)
+    // method ini untuk admin assign kurir ke order tertentu
     public String assignCourierToOrder(String idOrder, String idCourier) {
-        // Validasi sederhana (Activity Diagram: Validate Data)
         if (idCourier == null || idCourier.isEmpty()) return "Courier ID invalid";
 
-        // 1. Simpan ke tabel Deliveries (Sequence Message 2.1.1: saveDA)
+        // 1. insert data delivery baru
         String queryDelivery = String.format("INSERT INTO Deliveries (idOrder, idCourier, status) VALUES ('%s', '%s', 'Pending')", 
                 idOrder, idCourier);
         db.execUpdate(queryDelivery);
 
-        // 2. Update Status Order jadi In Progress (Kebutuhan Sistem)
+        // 2. update status order jadi 'in progress'
         String queryUpdate = String.format("UPDATE OrderHeaders SET status = 'In Progress' WHERE idOrder = '%s'", idOrder);
         db.execUpdate(queryUpdate);
 
         return "Success";
     }
 
- // Method Helper buat View List (Activity Diagram: Fetch order list)
+    // method ini untuk ambil list order yg statusnya masih 'pending'
     public List<OrderHeader> getPendingOrders() {
         List<OrderHeader> orders = new ArrayList<>();
         String query = "SELECT * FROM OrderHeaders WHERE status = 'Pending'";
@@ -71,7 +68,7 @@ public class DeliveryHandler {
         return orders;
     }
 
- // Method Helper buat Dropdown
+    // method ini untuk ambil list nama kurir buat dropdown
     public List<String> getCouriersList() {
         List<String> couriers = new ArrayList<>();
         String query = "SELECT idUser, fullName FROM Users WHERE role = 'Courier'";
@@ -84,13 +81,11 @@ public class DeliveryHandler {
         return couriers;
     }
 
-    // === FITUR COURIER (TAMBAHAN BARU) ===
+    // === FITUR COURIER ===
     
-    // 1. Ambil Kerjaan Kurir (My Jobs)
+    // method ini untuk ambil list kerjaan yg ditugaskan ke kurir tertentu
     public List<OrderHeader> getDeliveries(String idCourier) {
         List<OrderHeader> jobs = new ArrayList<>();
-        
-        // Query tetap sama (JOIN)
         String query = "SELECT o.* FROM OrderHeaders o " +
                        "JOIN Deliveries d ON o.idOrder = d.idOrder " +
                        "WHERE d.idCourier = '" + idCourier + "' " +
@@ -113,17 +108,14 @@ public class DeliveryHandler {
         return jobs;
     }
     
-    // 2. Update Status Pengiriman (Sesuai Class Diagram: editDeliveryStatus)
+    // method ini untuk kurir update status pengiriman
     public String editDeliveryStatus(String idOrder, String idCourier, String newStatus) {
         try {
-            // Validasi tambahan: Pastikan order ini beneran punya si Courier (Optional tapi bagus)
-            // Tapi karena Class Diagram minta parameternya ada, kita masukin aja ke query biar aman.
-            
-            // 1. Update OrderHeaders
+            // update status di order header
             String queryOrder = String.format("UPDATE OrderHeaders SET status = '%s' WHERE idOrder = '%s'", newStatus, idOrder);
             db.execUpdate(queryOrder);
             
-            // 2. Update Deliveries (Pakai idCourier di WHERE clause biar sesuai parameter)
+            // update status di tabel delivery juga
             String queryDelivery = String.format("UPDATE Deliveries SET status = '%s' WHERE idOrder = '%s' AND idCourier = '%s'", 
                     newStatus, idOrder, idCourier);
             db.execUpdate(queryDelivery);
@@ -135,8 +127,7 @@ public class DeliveryHandler {
         }
     }
     
- // 1. getAllDeliveries() -> Sesuai Class Diagram
-    // Return: List of Delivery Objects
+    // method ini untuk ambil semua data delivery (syarat diagram)
     public List<Delivery> getAllDeliveries() {
         List<Delivery> deliveries = new ArrayList<>();
         String query = "SELECT * FROM Deliveries";
@@ -156,8 +147,7 @@ public class DeliveryHandler {
         return deliveries;
     }
 
-    // 2. getDelivery(idOrder, idCourier) -> Sesuai Class Diagram
-    // Return: Single Delivery Object
+    // method ini untuk ambil data delivery spesifik (syarat diagram)
     public Delivery getDelivery(String idOrder, String idCourier) {
         String query = String.format("SELECT * FROM Deliveries WHERE idOrder = '%s' AND idCourier = '%s'", idOrder, idCourier);
         ResultSet rs = db.execQuery(query);

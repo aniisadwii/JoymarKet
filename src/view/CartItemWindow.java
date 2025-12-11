@@ -2,6 +2,7 @@ package view;
 
 import controller.CartItemHandler;
 import controller.OrderHandler;
+import controller.PromoHandler;
 import javafx.geometry.*;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
@@ -11,52 +12,59 @@ import javafx.stage.Stage;
 import model.CartItem;
 import model.Customer;
 import model.Product;
+import model.Promo;
 import util.Session;
 import java.util.List;
 
-// SATU CLASS UNTUK SEMUA: Add, Edit, Remove, View List
-// Sesuai Diagram Sequence yang selalu pakai nama 'CartItemWindow'
+// class ini untuk mengatur tampilan keranjang belanja (cart) dan form tambah/edit item
 public class CartItemWindow {
     
     private Stage stage;
     private CartItemHandler cartHandler = new CartItemHandler();
     private OrderHandler orderHandler = new OrderHandler();
+    private PromoHandler promoHandler = new PromoHandler(); 
+    
     private Customer currentUser;
     
-    // Variabel buat Layout
     private VBox rootLayout;
-    private VBox editArea; // Buat nampilin form di bawah tabel
+    private VBox editArea;
     
-    // Variabel khusus Mode Form (Add/Edit)
     private Product productTarget;
     private CartItem cartItemTarget;
     private boolean isEditMode = false;
     private Runnable onSuccessCallback;
+    
+    private double currentGrossTotal = 0; 
+    private Label lblTotal; 
+    private Label lblDiscountInfo; 
 
-    // --- CONSTRUCTOR 1: MODE HALAMAN KERANJANG (List + Remove) ---
-    // Dipanggil dari CustomerWindow (Tombol "View Cart")
+    // --- CONSTRUCTOR ---
+    
+    // constructor ini untuk inisialisasi halaman list keranjang utama
     public CartItemWindow(Stage stage) {
         this.stage = stage;
         this.currentUser = (Customer) Session.getInstance().getUser();
-        initializeCartList(); // Bikin tampilan List Tabel
+        initializeCartList(); 
     }
 
-    // --- CONSTRUCTOR 2: MODE FORM ADD/EDIT ---
-    // Dipanggil dari ProductWindow (Add) atau dari Diri Sendiri (Edit)
+    // constructor ini untuk inisialisasi form tambah item ke keranjang (dari menu produk)
     public CartItemWindow(Product product) {
         this.productTarget = product;
         this.isEditMode = false;
-        initializeForm(); // Bikin tampilan Form Kecil
+        initializeForm(); 
     }
 
+    // constructor ini untuk inisialisasi form edit quantity item yg udah ada di keranjang
     public CartItemWindow(CartItem cartItem, Runnable onSuccess) {
         this.cartItemTarget = cartItem;
         this.isEditMode = true;
         this.onSuccessCallback = onSuccess;
-        initializeForm(); // Bikin tampilan Form Kecil
+        initializeForm(); 
     }
 
-    // --- TAMPILAN A: HALAMAN LIST KERANJANG (Fitur Remove & Checkout) ---
+    // --- TAMPILAN A: HALAMAN LIST KERANJANG ---
+    
+    // method ini untuk menyusun tampilan list item di keranjang beserta fitur checkout dan promo
     private void initializeCartList() {
         Label lblTitle = new Label("My Cart");
         lblTitle.setStyle("-fx-font-size: 20px; -fx-font-weight: bold;");
@@ -64,48 +72,87 @@ public class CartItemWindow {
         TableView<CartItem> table = new TableView<>();
         setupTableColumns(table);
 
-        Label lblTotal = new Label("Total: calculating...");
-        refreshTable(table, lblTotal);
+        lblTotal = new Label("Total Payment: calculating...");
+        lblTotal.setStyle("-fx-font-size: 14px; -fx-font-weight: bold;");
         
-        TextField txtPromo = new TextField();
-        txtPromo.setPromptText("Promo Code (Optional)");
+        lblDiscountInfo = new Label();
+        lblDiscountInfo.setMinHeight(40); 
 
+        refreshTable(table); 
+        
+        // --- FITUR PROMO ---
+        TextField txtPromo = new TextField();
+        txtPromo.setPromptText("Promo Code");
+        
+        Button btnApplyPromo = new Button("Apply"); 
+        
+        // logika untuk cek validitas kode promo dan hitung diskon
+        Runnable applyPromoLogic = () -> {
+            String code = txtPromo.getText().trim();
+
+            if (code.isEmpty()) {
+                showAlert(Alert.AlertType.WARNING, "Please enter a promo code");
+                return;
+            }
+            
+            Promo promo = promoHandler.getPromo(code);
+            
+            if (promo != null) {
+                double discountAmount = currentGrossTotal * (promo.getDiscountPercentage() / 100.0);
+                double finalPrice = currentGrossTotal - discountAmount;
+                
+                lblDiscountInfo.setText(String.format("Promo Applied! Disc %.0f%% (-Rp %.2f)\nTotal Payment After Discount: Rp %.2f", 
+                        promo.getDiscountPercentage(), discountAmount, finalPrice));
+                lblDiscountInfo.setStyle("-fx-text-fill: green; -fx-font-weight: bold; -fx-font-size: 13px;");
+                
+            } else {
+                lblDiscountInfo.setText("Invalid Promo Code!");
+                lblDiscountInfo.setStyle("-fx-text-fill: red; -fx-font-weight: bold;");
+            }
+        };
+
+        // trigger cek promo saat tombol diklik atau tekan enter
+        btnApplyPromo.setOnAction(e -> applyPromoLogic.run());
+        txtPromo.setOnAction(e -> applyPromoLogic.run());
+        
+        HBox promoBox = new HBox(10, new Label("Promo Code:"), txtPromo, btnApplyPromo);
+        promoBox.setAlignment(Pos.CENTER_LEFT);
+
+        // --- BUTTONS ---
         Button btnEdit = new Button("Edit Qty");
         Button btnDelete = new Button("Remove Item");
         Button btnCheckout = new Button("Checkout");
         Button btnBack = new Button("Back to Home");
 
-        // Logic Tombol Edit (Memanggil Diri Sendiri mode Form)
+        // buka form edit quantity untuk item yg dipilih
         btnEdit.setOnAction(e -> {
             CartItem selected = table.getSelectionModel().getSelectedItem();
             if (selected == null) { showAlert(Alert.AlertType.WARNING, "Please select an item first"); return; }
-            
             editArea.getChildren().clear();
-            // REKUKSIF: Bikin object CartItemWindow baru tapi cuma ambil view form-nya aja
             CartItemWindow formView = new CartItemWindow(selected, () -> {
-                refreshTable(table, lblTotal); 
+                refreshTable(table); 
                 editArea.getChildren().clear(); 
+                lblDiscountInfo.setText(""); 
             });
             editArea.getChildren().add(formView.getView());
         });
 
-        // Logic Tombol Remove (Sesuai Diagram Remove)
+        // hapus item dari keranjang via controller
         btnDelete.setOnAction(e -> {
             CartItem selected = table.getSelectionModel().getSelectedItem();
             if (selected == null) { showAlert(Alert.AlertType.WARNING, "Please select an item first"); return; }
-            
             String status = cartHandler.deleteCartItem(currentUser.getIdUser(), selected.getIdProduct());
-            
             if (status.equals("Success")) {
                 showAlert(Alert.AlertType.INFORMATION, "Item removed successfully");
-                refreshTable(table, lblTotal);
+                refreshTable(table);
                 editArea.getChildren().clear();
+                lblDiscountInfo.setText(""); 
             } else {
                 showAlert(Alert.AlertType.ERROR, status);
             }
         });
 
-        // Logic Checkout
+        // proses checkout, validasi keranjang kosong dan konfirmasi user
         btnCheckout.setOnAction(e -> {
             if (table.getItems().isEmpty()) { showAlert(Alert.AlertType.WARNING, "Cart is empty"); return; }
             String promoCode = txtPromo.getText().trim();
@@ -138,15 +185,32 @@ public class CartItemWindow {
 
         rootLayout = new VBox(10);
         rootLayout.setPadding(new Insets(20));
-        rootLayout.getChildren().addAll(lblTitle, table, itemActions, editArea, lblTotal, new Label("Promo Code:"), txtPromo, mainActions);
+        
+        rootLayout.getChildren().addAll(lblTitle, table, itemActions, editArea, lblTotal, promoBox, lblDiscountInfo, mainActions);
 
-        Scene scene = new Scene(rootLayout, 600, 600);
+        // langsung masukkan rootlayout ke scene tanpa scrollpane
+        Scene scene = new Scene(rootLayout, 600, 650);
         stage.setScene(scene);
         stage.setTitle("JoyMarket - Cart");
         stage.show();
     }
 
-    // --- TAMPILAN B: FORM KECIL (Fitur Add & Update) ---
+    // method ini untuk refresh data tabel dan hitung ulang total pembayaran
+    private void refreshTable(TableView<CartItem> table) {
+        List<CartItem> items = cartHandler.getCartItems(currentUser.getIdUser());
+        table.getItems().setAll(items);
+        
+        currentGrossTotal = 0;
+        for (CartItem item : items) {
+            currentGrossTotal += item.getTotal();
+        }
+        
+        lblTotal.setText("Total Payment: Rp " + currentGrossTotal);
+    }
+
+    // --- Helper Methods & Form Logic ---
+    
+    // method ini untuk menyusun form popup input quantity
     private void initializeForm() {
         rootLayout = new VBox(10);
         rootLayout.setPadding(new Insets(15));
@@ -170,6 +234,7 @@ public class CartItemWindow {
 
         inputBox.getChildren().addAll(lblQty, txtQty, btnAction);
 
+        // logika simpan data ke keranjang (tambah baru atau update)
         btnAction.setOnAction(e -> {
             String qtyStr = txtQty.getText();
             if (!isNumeric(qtyStr)) { showAlert(Alert.AlertType.ERROR, "Input must be a valid number"); return; }
@@ -178,7 +243,6 @@ public class CartItemWindow {
             String userId = Session.getInstance().getUser().getIdUser();
             String status;
             
-            // Sesuai Diagram: Add (createCartItem) atau Update (editCartItem)
             if (isEditMode) {
                 status = cartHandler.editCartItem(userId, cartItemTarget.getIdProduct(), qty);
             } else {
@@ -197,9 +261,9 @@ public class CartItemWindow {
         rootLayout.getChildren().addAll(lblName, inputBox);
     }
 
-    // --- HELPER METHODS ---
-    public VBox getView() { return rootLayout; } // Buat diambil sama ProductWindow
+    public VBox getView() { return rootLayout; } 
 
+    // method ini untuk setting kolom tabel cart
     private void setupTableColumns(TableView<CartItem> table) {
         TableColumn<CartItem, String> colName = new TableColumn<>("Product");
         colName.setCellValueFactory(new PropertyValueFactory<>("productName"));
@@ -216,15 +280,8 @@ public class CartItemWindow {
         table.getColumns().addAll(colName, colQty, colPrice, colTotal);
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
     }
-
-    private void refreshTable(TableView<CartItem> table, Label label) {
-        List<CartItem> items = cartHandler.getCartItems(currentUser.getIdUser());
-        table.getItems().setAll(items);
-        double total = 0;
-        for (CartItem item : items) total += item.getTotal();
-        label.setText("Total Payment: Rp " + total);
-    }
     
+    // helper buat validasi angka
     private boolean isNumeric(String str) {
         if (str == null || str.isEmpty()) return false;
         for (char c : str.toCharArray()) { if (!Character.isDigit(c)) return false; }
@@ -237,7 +294,6 @@ public class CartItemWindow {
         alert.show();
     }
     
-    // Overload showAlert buat title custom
     private void showAlert(Alert.AlertType type, String title, String content) {
         Alert alert = new Alert(type);
         alert.setTitle(title);

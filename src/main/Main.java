@@ -11,8 +11,9 @@ public class Main extends Application {
     }
 
     @Override
+    // method utama yg jalan pas aplikasi dibuka
     public void start(Stage primaryStage) throws Exception {
-        // Kita arahin langsung ke LoginView pas pertama buka
+        // langsung arahin ke halaman login
         new LoginView(primaryStage);
     }
 }

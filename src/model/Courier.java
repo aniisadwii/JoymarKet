@@ -4,15 +4,14 @@ public class Courier extends User {
     private String vehicleType;
     private String vehiclePlate;
 
-    // Constructor
+    // constructor buat inisialisasi kurir dgn data kendaraan
     public Courier(String idUser, String fullName, String email, String password, String phone, String address, String vehicleType, String vehiclePlate) {
-        // Role hardcode "Courier"
         super(idUser, fullName, email, password, phone, address, "Courier");
         this.vehicleType = vehicleType;
         this.vehiclePlate = vehiclePlate;
     }
-
-    // Getters & Setters
+    
+    // --- getter dan setter ---
     public String getVehicleType() {
         return vehicleType;
     }

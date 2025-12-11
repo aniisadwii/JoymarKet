@@ -10,56 +10,60 @@ import model.Customer;
 import util.Session;
 import java.util.Optional;
 
-// nama kelas ini sesuai dengan lifeline 'customerwindow' di sequence diagram
+// class ini merepresentasikan dashboard utama untuk customer
 public class CustomerWindow {
     
     private Stage stage;
     private CustomerHandler customerHandler = new CustomerHandler(); 
 
+    // constructor ini untuk inisialisasi window dashboard customer
     public CustomerWindow(Stage stage) {
         this.stage = stage;
         initialize();
     }
 
+    // method ini untuk menyusun layout ui, menampilkan info saldo, dan navigasi menu
     private void initialize() {
+        // ambil data customer yang sedang login dari session
         Customer customer = (Customer) Session.getInstance().getUser(); 
 
         Label lblWelcome = new Label("Welcome, " + customer.getFullName());
         lblWelcome.setStyle("-fx-font-size: 18px; -fx-font-weight: bold;");
 
-        // label saldo yang bakal berubah realtime
+        // label saldo ini nanti akan diupdate realtime setelah top up berhasil
         Label lblBalance = new Label("Balance: Rp " + customer.getBalance());
         lblBalance.setStyle("-fx-font-size: 14px; -fx-text-fill: green;");
         
         Button btnTopUp = new Button("Top Up");
         
-        // logic tombol top up (activity diagram: press top up button)
+        // logika tombol top up, mengimplementasikan alur activity diagram
         btnTopUp.setOnAction(e -> {
-            // activity diagram: display top up form
+            // tampilkan dialog input nominal top up
             TextInputDialog dialog = new TextInputDialog();
             dialog.setTitle("Top Up Balance");
             dialog.setHeaderText("Enter Top Up Amount (Min. 10.000)");
             dialog.setContentText("Amount:");
 
-            // activity diagram: fill form & press ok
+            // proses input user setelah tekan ok
             Optional<String> result = dialog.showAndWait();
             result.ifPresent(amountStr -> {
                 
-                // panggil controller (sequence diagram message 1: topupbalance)
+                // panggil controller untuk validasi dan update saldo di database
                 String status = customerHandler.topUpBalance(amountStr); 
                 
-                // activity diagram: decision node (valid/invalid)
+                // cek hasil transaksi (decision node di activity diagram)
                 if (status.equals("Success")) {
-                    // flow yes: update label saldo dan tampilkan pesan sukses
+                    // update tampilan saldo langsung di ui dan kasih pesan sukses
                     lblBalance.setText("Balance: Rp " + customer.getBalance()); 
                     showAlert(Alert.AlertType.INFORMATION, "Success", "Top Up Successful");
                 } else {
-                    // flow no: tampilkan error message
+                    // tampilkan pesan error jika validasi gagal
                     showAlert(Alert.AlertType.ERROR, "Failed", status);
                 }
             });
         });
 
+        // tombol navigasi ke menu lain (cart, profile, history, logout)
         Button btnViewCart = new Button("View Cart");
         btnViewCart.setOnAction(e -> new CartItemWindow(stage));
         
@@ -81,7 +85,7 @@ public class CustomerWindow {
         topLayout.setStyle("-fx-background-color: #f0f0f0;");
         topLayout.getChildren().addAll(lblWelcome, balanceBox, btnViewCart, btnHistory, btnEditProfile, btnLogout);
 
-        // menampilkan list produk di bagian tengah (reusable view productwindow)
+        // menampilkan list produk di area tengah menggunakan komponen reusable productwindow
         ProductWindow productWindow = new ProductWindow();
         
         BorderPane root = new BorderPane();

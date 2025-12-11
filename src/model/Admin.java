@@ -3,15 +3,14 @@ package model;
 public class Admin extends User {
     private String emergencyContact;
 
-    // Constructor
+    // constructor ini buat inisialisasi object admin
     public Admin(String idUser, String fullName, String email, String password, String phone, String address, String emergencyContact) {
-        // "super" ini ngirim data ke constructor User (Parent)
-        // Role kita hardcode jadi "Admin" biar otomatis
+        // panggil constructor parent dan set role jadi admin
         super(idUser, fullName, email, password, phone, address, "Admin");
         this.emergencyContact = emergencyContact;
     }
 
-    // Getter & Setter khusus Admin
+    // --- getter dan setter ---
     public String getEmergencyContact() {
         return emergencyContact;
     }

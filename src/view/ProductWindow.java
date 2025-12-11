@@ -9,58 +9,55 @@ import model.Product;
 import util.Session;
 import java.util.Optional;
 
-// CLASS PALUGADA: Dipakai di fitur 'View Products' (Customer) DAN 'Edit Product Stock' (Admin)
-// Sesuai dengan nama lifeline 'ProductWindow' di kedua Sequence Diagram.
+// class ini bersifat multifungsi, dipakai untuk fitur view products (customer) dan edit stock (admin)
 public class ProductWindow { 
     
     private ProductHandler productHandler = new ProductHandler();
     private VBox layout;
     private TableView<Product> table;
     
-    // Area khusus buat Customer nampilin form cart (di bawah tabel)
+    // area khusus di bawah tabel untuk menampilkan form add to cart bagi customer
     private VBox cartFormArea; 
 
+    // constructor ini untuk inisialisasi window produk
     public ProductWindow() {
         initialize();
     }
 
+    // method ini untuk menyusun layout, tabel produk, dan handling interaksi user sesuai role
     private void initialize() {
         layout = new VBox(10);
         layout.setPadding(new Insets(10));
 
-        // Judul dinamis biar keren dikit
+        // judul window menyesuaikan role user yang sedang login
         String role = Session.getInstance().getUser().getRole();
         Label lblTitle = new Label(role.equals("Admin") ? "Manage Product Stock" : "Available Products");
         lblTitle.setStyle("-fx-font-weight: bold; -fx-font-size: 14px;");
 
-        // Kita pake TableView biar rapi (Standar Admin & Customer)
-     // Kita pake TableView biar rapi
+        // inisialisasi tabel untuk menampilkan daftar produk
         table = new TableView<>();
         setupTableColumns();
         refreshTable();
 
-        // Area Form Cart
+        // area container untuk form cart
         cartFormArea = new VBox();
         cartFormArea.setPadding(new Insets(10, 0, 0, 0));
 
-        // --- REVISI BAGIAN INI ---
-        // HAPUS bagian table.getSelectionModel().selectedItemProperty().addListener(...) yang lama
-        // GANTI dengan setOnMouseClicked:
-        
+        // handling event klik pada baris tabel
         table.setOnMouseClicked(e -> {
-            // Ambil item yang diklik
+            // ambil item produk yang diklik
             Product selected = table.getSelectionModel().getSelectedItem();
             
-            // Pastikan itemnya ada (bukan klik area kosong)
+            // pastikan item valid (bukan klik area kosong)
             if (selected != null) {
                 if (role.equals("Admin")) {
-                    // Flow Admin: Edit Stock
+                    // jika admin, jalankan logika edit stok
                     handleAdminAction(selected);
                     
-                    // Opsional: Lepas seleksi setelah klik biar rapi
+                    // opsional: hapus seleksi setelah aksi selesai agar rapi
                     table.getSelectionModel().clearSelection(); 
                 } else {
-                    // Flow Customer: Add to Cart
+                    // jika customer, tampilkan form add to cart di bagian bawah
                     handleCustomerAction(selected);
                 }
             }
@@ -69,7 +66,7 @@ public class ProductWindow {
         layout.getChildren().addAll(lblTitle, table, cartFormArea);
     }
 
-    // Setup kolom tabel
+    // method ini untuk konfigurasi kolom-kolom pada tabel produk
     private void setupTableColumns() {
         TableColumn<Product, String> colName = new TableColumn<>("Product Name");
         colName.setCellValueFactory(new PropertyValueFactory<>("name"));
@@ -84,16 +81,13 @@ public class ProductWindow {
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
     }
 
-    // Logic Khusus Admin (Pop-up Edit Stock)
+    // method ini untuk menangani aksi admin saat ingin mengubah stok produk via dialog input
     private void handleAdminAction(Product product) {
         TextInputDialog dialog = new TextInputDialog(String.valueOf(product.getStock()));
         dialog.setTitle("Update Stock");
         dialog.setHeaderText("Update stock for: " + product.getName());
         dialog.setContentText("New Stock:");
         
-        // Agar selection tabel gak nyangkut/bisa diklik ulang
-        // table.getSelectionModel().clearSelection(); // Opsional, tergantung selera UX
-
         Optional<String> result = dialog.showAndWait();
         result.ifPresent(stockStr -> {
             if (!isNumeric(stockStr)) {
@@ -102,7 +96,7 @@ public class ProductWindow {
             }
             
             int newStock = Integer.parseInt(stockStr);
-            // Panggil Controller (Sequence Message: editProductStock)
+            // panggil controller untuk update stok di database
             String status = productHandler.editProductStock(product.getIdProduct(), newStock);
             
             if (status.equals("Success")) {
@@ -114,22 +108,25 @@ public class ProductWindow {
         });
     }
 
-    // Logic Khusus Customer (Munculin Form Add to Cart di bawah)
+    // method ini untuk menangani aksi customer, memunculkan form cart di panel bawah
     private void handleCustomerAction(Product product) {
         cartFormArea.getChildren().clear();
-        // Panggil CartItemWindow (Mode Form) - Sesuai Diagram Add Cart
+        // panggil view CartItemWindow dalam mode form (reusable component)
         CartItemWindow formView = new CartItemWindow(product);
         cartFormArea.getChildren().add(formView.getView());
     }
 
+    // method ini untuk memuat ulang data produk terbaru dari database
     public void refreshTable() {
         table.getItems().setAll(productHandler.getAllProducts());
     }
 
+    // method ini mengembalikan layout utama untuk ditampilkan di scene
     public VBox getView() {
         return layout;
     }
     
+    // helper untuk validasi input angka
     private boolean isNumeric(String str) {
         if (str == null || str.isEmpty()) return false;
         for (char c : str.toCharArray()) { if (!Character.isDigit(c)) return false; }

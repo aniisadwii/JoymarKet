@@ -12,21 +12,24 @@ public class Delivery {
     }
 
     // --- METHOD STUB SESUAI CLASS DIAGRAM ---
+    // method-method di bawah ini ada untuk memenuhi struktur Class Diagram.
+    // implementasi logika sesungguhnya dilakukan di class Controller (DeliveryHandler) 
+    // agar sesuai dengan pola desain MVC (Pemisahan Model dan Logic).
     
     public void createDelivery(String idOrder, String idCourier) {
-        // Logic di Handler
+        // Logika INSERT ke database dijalankan oleh DeliveryHandler.assignCourierToOrder()
     }
 
     public Delivery getDelivery(String idOrder, String idCourier) {
+        // Logika SELECT dari database dijalankan oleh DeliveryHandler.getDelivery()
         return null;
     }
 
-    // UPDATE: Tambahkan parameter idCourier sesuai Class Diagram
     public void editDeliveryStatus(String idOrder, String idCourier, String status) {
-        // Logic di Handler
+        // Logika UPDATE ke database dijalankan oleh DeliveryHandler.editDeliveryStatus()
     }
 
-    // --- GETTERS & SETTERS ---
+    // --- getter dan setter ---
     public String getIdOrder() { return idOrder; }
     public String getIdCourier() { return idCourier; }
     public String getStatus() { return status; }

@@ -10,21 +10,25 @@ import util.Session;
 public class CourierMainView {
     private Stage stage;
 
+    // constructor ini untuk inisialisasi dashboard utama khusus kurir
     public CourierMainView(Stage stage) {
         this.stage = stage;
         initialize();
     }
 
+    // method ini untuk menyusun tata letak ui dashboard kurir
     private void initialize() {
+        // ambil nama kurir yang sedang login dari session untuk ditampilkan di judul
         String courierName = Session.getInstance().getUser().getFullName();
 
         Label lblTitle = new Label("Courier Dashboard - " + courierName);
         lblTitle.setStyle("-fx-font-size: 18px; -fx-font-weight: bold;");
 
-        // Menu Atas
+        // menu navigasi bagian atas
         Button btnEditProfile = new Button("Edit Profile");
         btnEditProfile.setOnAction(e -> new UserWindow());
         
+        // tombol logout untuk menghapus sesi dan kembali ke halaman login
         Button btnLogout = new Button("Logout");
         btnLogout.setOnAction(e -> {
             Session.getInstance().setUser(null);
@@ -36,8 +40,7 @@ public class CourierMainView {
         topMenu.setPadding(new Insets(10));
         topMenu.setStyle("-fx-background-color: #ddd;");
 
-        // Content Utama: Menggunakan DeliveryWindow (Sesuai Diagram)
-        // Ini memastikan lifeline sequence diagram terpenuhi
+        // ini memungkinkan kurir melihat daftar tugas dan mengubah status pengiriman
         DeliveryWindow deliveryWindow = new DeliveryWindow();
         
         BorderPane root = new BorderPane();

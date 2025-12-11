@@ -11,8 +11,7 @@ public class PromoHandler {
     
     private Connect db = Connect.getInstance();
 
-    // Method 1: getAllPromos() -> Sesuai Diagram
-    // (Meskipun mungkin belum kepake di fitur sekarang, tapi wajib ada buat syarat diagram)
+    // method ini untuk ambil semua list promo yg ada di database
     public List<Promo> getAllPromos() {
         List<Promo> promos = new ArrayList<>();
         String query = "SELECT * FROM Promos";
@@ -32,13 +31,14 @@ public class PromoHandler {
         return promos;
     }
 
-    // Method 2: getPromo(code) -> Sesuai Diagram & Dipakai di Checkout
+    // method ini untuk cari 1 promo spesifik berdasarkan code yg diketik user
     public Promo getPromo(String code) {
         String query = "SELECT * FROM Promos WHERE code = '" + code + "'";
         ResultSet rs = db.execQuery(query);
         
         try {
             if (rs.next()) {
+                // return object promo kalau ketemu
                 return new Promo(
                     rs.getString("idPromo"),
                     rs.getString("code"),

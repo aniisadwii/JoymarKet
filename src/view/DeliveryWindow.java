@@ -9,52 +9,57 @@ import model.OrderHeader;
 import util.Session;
 import java.util.*;
 
+// class ini untuk mengatur tampilan manajemen pengiriman, digunakan oleh admin (assign kurir) dan kurir (update status)
 public class DeliveryWindow {
     
     private DeliveryHandler deliveryHandler = new DeliveryHandler();
     private VBox layout;
     private TableView<OrderHeader> table;
     
-    // Variabel Class (Global) biar bisa diakses refreshTable()
+    // variabel global untuk komponen ui agar bisa diakses saat refresh
     private Label lblEmpty; 
     private Label lblTitle;
-    private HBox actions; // Container tombol
+    private HBox actions; 
     
     private String userRole;
     private String userId;
 
+    // constructor ini untuk inisialisasi window delivery dan mengambil data user dari session
     public DeliveryWindow() {
         this.userRole = Session.getInstance().getUser().getRole();
         this.userId = Session.getInstance().getUser().getIdUser();
         initialize();
     }
 
+    // method ini untuk menyusun layout, tabel, dan tombol aksi berdasarkan role user yang login
     private void initialize() {
         layout = new VBox(10);
         layout.setPadding(new Insets(10));
 
-        // 1. Setup Judul
+        // 1. setup judul dinamis
         String title = userRole.equals("Admin") ? "Incoming Orders (Pending)" : "My Assigned Deliveries";
         lblTitle = new Label(title);
         lblTitle.setStyle("-fx-font-weight: bold; -fx-font-size: 14px;");
 
-        // 2. Setup Label Kosong
+        // 2. setup label pesan jika data kosong
         lblEmpty = new Label(userRole.equals("Admin") ? "No Pending Orders" : "No Assigned Delivery Available");
         lblEmpty.setStyle("-fx-text-fill: grey; -fx-font-size: 16px;");
 
-        // 3. Setup Tabel
+        // 3. setup struktur tabel
         setupTable();
         
-        // 4. Setup Tombol Actions (Disimpan di variabel global 'actions')
+        // 4. setup tombol aksi (assign/update/refresh)
         actions = new HBox(10);
         actions.setAlignment(Pos.CENTER_LEFT);
 
         if (userRole.equals("Admin")) {
+            // tombol khusus admin untuk assign order
             Button btnAssign = new Button("Assign to Courier");
             btnAssign.setOnAction(e -> handleAssignCourier());
             actions.getChildren().add(btnAssign);
             
         } else if (userRole.equals("Courier")) {
+            // tombol khusus kurir untuk update status
             Button btnUpdateStatus = new Button("Update Status");
             btnUpdateStatus.setOnAction(e -> handleUpdateStatus());
             actions.getChildren().add(btnUpdateStatus);
@@ -64,10 +69,11 @@ public class DeliveryWindow {
         btnRefresh.setOnAction(e -> refreshTable());
         actions.getChildren().add(btnRefresh);
 
-        // 5. Panggil Refresh buat nentuin tampilan awal (Tabel atau Pesan Kosong?)
+        // 5. panggil refresh untuk memuat data awal
         refreshTable();
     }
     
+    // method ini untuk konfigurasi kolom-kolom pada tabel order
     private void setupTable() {
         table = new TableView<>();
         
@@ -87,34 +93,30 @@ public class DeliveryWindow {
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
     }
 
-    // === REVISI PENTING DI SINI ===
-    // Method ini sekarang ngatur logika tampilan sesuai Activity Diagram Decision Node
+    // method ini untuk mengambil data terbaru dan memperbarui tampilan tabel
     private void refreshTable() {
         List<OrderHeader> data;
         
-        // Fetch List (Activity Diagram)
+        // fetch data sesuai role (admin: pending orders, kurir: my jobs)
         if (userRole.equals("Admin")) {
             data = deliveryHandler.getPendingOrders();
         } else {
             data = deliveryHandler.getDeliveries(userId);
         }
         
-        // Bersihkan Layout dulu biar gak numpuk
+        // bersihkan layout sebelum diisi ulang
         layout.getChildren().clear();
         
-        // Decision Node: Empty?
+        // logika decision node: tampilkan tabel jika ada data, atau pesan kosong jika tidak
         if (data.isEmpty()) {
-            // FLOW NO: Tampilkan Pesan Kosong + Tombol Refresh
             layout.getChildren().addAll(lblTitle, lblEmpty, actions);
         } else {
-            // FLOW YES: Tampilkan Tabel + Tombol Aksi
             table.getItems().setAll(data);
             layout.getChildren().addAll(lblTitle, table, actions);
         }
     }
 
-    // ... (Sisa method handleAssignCourier, handleUpdateStatus, getView, showAlert SAMA PERSIS, copy aja dari yang lama) ...
-    
+    // method ini untuk menangani aksi admin saat menugaskan kurir ke order tertentu
     private void handleAssignCourier() {
         OrderHeader selectedOrder = table.getSelectionModel().getSelectedItem();
         if (selectedOrder == null) {
@@ -145,6 +147,7 @@ public class DeliveryWindow {
         });
     }
 
+    // method ini untuk menangani aksi kurir saat memperbarui status pengiriman
     private void handleUpdateStatus() {
         OrderHeader selectedJob = table.getSelectionModel().getSelectedItem();
         if (selectedJob == null) {
@@ -172,6 +175,7 @@ public class DeliveryWindow {
         });
     }
 
+    // method ini untuk mengembalikan layout utama agar bisa ditampilkan di scene
     public VBox getView() {
         return layout;
     }

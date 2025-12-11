@@ -3,9 +3,9 @@ package util;
 import java.sql.*;
 
 public class Connect {
-    private final String USERNAME = "root"; // Sesuaikan sama user XAMPP kamu
-    private final String PASSWORD = "";     // Biasanya kosong kalo default
-    private final String DATABASE = "joymarket2"; // Sesuai nama DB kamu
+    private final String USERNAME = "root"; 
+    private final String PASSWORD = ""; 
+    private final String DATABASE = "joymarket2"; 
     private final String HOST = "localhost:3306";
     private final String CONNECTION = String.format("jdbc:mysql://%s/%s", HOST, DATABASE);
 
@@ -13,7 +13,7 @@ public class Connect {
     private Statement st;
     private static Connect instance;
 
-    // Singleton Pattern: Biar koneksinya cuma dibuat sekali
+    // method ini untuk mendapatkan instance tunggal koneksi database (singleton pattern)
     public static Connect getInstance() {
         if (instance == null) {
             instance = new Connect();
@@ -21,6 +21,7 @@ public class Connect {
         return instance;
     }
 
+    // constructor privat ini untuk inisialisasi driver jdbc dan membangun koneksi ke database mysql
     private Connect() {
         try {
             Class.forName("com.mysql.cj.jdbc.Driver");
@@ -33,7 +34,7 @@ public class Connect {
         }
     }
 
-    // Buat jalanin query SELECT (ngambil data)
+    // method ini untuk eksekusi query pengambilan data (select) dan mengembalikan result set
     public ResultSet execQuery(String query) {
         try {
             st = con.createStatement();
@@ -44,7 +45,7 @@ public class Connect {
         }
     }
 
-    // Buat jalanin query INSERT, UPDATE, DELETE
+    // method ini untuk eksekusi query manipulasi data (insert, update, delete)
     public void execUpdate(String query) {
         try {
             st = con.createStatement();
@@ -54,7 +55,7 @@ public class Connect {
         }
     }
     
-    // Jangan lupa siapin PreparedStatement juga nanti buat security!
+    // method ini untuk mengambil objek koneksi mentah jika diperlukan untuk prepared statement
     public Connection getConnection() {
         return con;
     }

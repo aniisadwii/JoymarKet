@@ -17,18 +17,18 @@ public class OrderHandler {
     private CartItemHandler cartHandler = new CartItemHandler(); 
     private PromoHandler promoHandler = new PromoHandler();
 
-    // GANTI PARAMETER SESUAI CLASS DIAGRAM: checkout(idOrder, idPromo)
-    // idCustomer kita ambil dari Session (implisit)
+    // method utama untuk proses checkout, parameter sesuai diagram (idOrder, idPromo)
     public String checkout(String idOrder, String idPromo) {
         
-        // 1. Ambil User dari Session (Karena diagram gak minta idCustomer di parameter)
+        // 1. ambil user dari session
         Customer user = (Customer) Session.getInstance().getUser();
         String idCustomer = user.getIdUser();
 
+        // ambil barang dari keranjang
         List<CartItem> cart = cartHandler.getCartItems(idCustomer);
         if (cart.isEmpty()) return "Cart is empty";
 
-        // 2. Hitung Total & Validasi Stok
+        // 2. hitung total & validasi stok terakhir
         double totalAmount = 0;
         for (CartItem item : cart) {
             int currentStock = getProductStock(item.getIdProduct());
@@ -38,34 +38,34 @@ public class OrderHandler {
             totalAmount += item.getTotal();
         }
 
-        // 3. Cek Promo (Parameter idPromo di sini adalah KODE PROMO dari inputan view)
-        // Note: Diagram tulisnya 'idPromo', tapi context-nya input user, jadi anggap itu Code.
-        String finalIdPromo = null; // Ini ID Promo buat database
+        // 3. cek validitas kode promo kalau user input
+        String finalIdPromo = null; 
         
         if (idPromo != null && !idPromo.isEmpty()) {
-            Promo promo = promoHandler.getPromo(idPromo); // Cek based on Code
+            Promo promo = promoHandler.getPromo(idPromo);
             if (promo == null) return "Invalid Promo Code!";
             
+            // hitung diskon
             double discount = totalAmount * (promo.getDiscountPercentage() / 100.0);
             totalAmount -= discount;
-            finalIdPromo = promo.getIdPromo(); // Simpan ID aslinya
+            finalIdPromo = promo.getIdPromo(); 
         }
 
-        // 4. Cek Saldo
+        // 4. cek saldo user cukup atau ngga
         if (user.getBalance() < totalAmount) {
             return "Balance not sufficient! (Total: " + totalAmount + ")";
         }
 
-        // --- TRANSAKSI ---
-        // idOrder sudah dikirim dari View, jadi kita pake itu.
+        // --- mulai transaksi database ---
+        
         String idPromoVal = (finalIdPromo == null) ? "NULL" : "'" + finalIdPromo + "'";
         
-        // Insert Header
+        // a. insert header order
         String queryHeader = String.format("INSERT INTO OrderHeaders (idOrder, idCustomer, idPromo, totalAmount, status, orderedAt) VALUES ('%s', '%s', %s, %f, 'Pending', NOW())",
                 idOrder, idCustomer, idPromoVal, totalAmount);
         db.execUpdate(queryHeader);
 
-        // Insert Detail & Potong Stok
+        // b. insert detail order & kurangi stok
         for (CartItem item : cart) {
             String queryDetail = String.format("INSERT INTO OrderDetails VALUES ('%s', '%s', %d)", idOrder, item.getIdProduct(), item.getQuantity());
             db.execUpdate(queryDetail);
@@ -73,30 +73,26 @@ public class OrderHandler {
             db.execUpdate(updateStock);
         }
 
-        // Potong Saldo
+        // c. potong saldo user
         double newBalance = user.getBalance() - totalAmount;
         String updateBalance = String.format("UPDATE Customers SET balance = %f WHERE idCustomer = '%s'", newBalance, idCustomer);
         db.execUpdate(updateBalance);
         user.setBalance(newBalance);
 
-        // Clear Cart
+        // d. hapus item dari keranjang
         String clearCart = "DELETE FROM CartItems WHERE idCustomer = '" + idCustomer + "'";
         db.execUpdate(clearCart);
 
         return "Success";
     }
     
- // method ini sesuai dengan class diagram: getCustomerOrders(idCustomer)
-    // method ini juga mengimplementasikan flow 'Fetch order history list' pada activity diagram
+    // method ini untuk ambil history order customer, urut dari yg terbaru
     public List<OrderHeader> getCustomerOrders(String idCustomer) {
         List<OrderHeader> orders = new ArrayList<>();
-        
-        // query untuk mengambil data order header milik customer tertentu
         String query = String.format("SELECT * FROM OrderHeaders WHERE idCustomer = '%s' ORDER BY orderedAt DESC", idCustomer);
         ResultSet rs = db.execQuery(query);
         
         try {
-            // looping hasil query (ini merepresentasikan loop yang ada di sequence diagram)
             while (rs.next()) {
                 orders.add(new OrderHeader(
                     rs.getString("idOrder"),
@@ -112,7 +108,7 @@ public class OrderHandler {
         return orders;
     }
     
- // Fungsinya buat validasi atau ambil detail 1 order spesifik punya customer tertentu
+    // method ini untuk ambil detail 1 order spesifik buat validasi/view
     public OrderHeader getCustomerOrderHeader(String idOrder, String idCustomer) {
         String query = String.format("SELECT * FROM OrderHeaders WHERE idOrder = '%s' AND idCustomer = '%s'", idOrder, idCustomer);
         ResultSet rs = db.execQuery(query);
@@ -133,11 +129,9 @@ public class OrderHandler {
         return null;
     }
     
- // Mengambil detail barang (Product Name, Price, Qty) dari tabel OrderDetails & Products
+    // method ini untuk ambil list barang yg dibeli di 1 order
     public List<CartItem> getOrderItems(String idOrder) {
         List<CartItem> items = new ArrayList<>();
-        
-        // Query JOIN: Ambil data qty dari OrderDetails, dan Nama/Harga dari Products
         String query = "SELECT p.idProduct, p.name, p.price, od.qty " +
                        "FROM OrderDetails od " +
                        "JOIN Products p ON od.idProduct = p.idProduct " +
@@ -147,7 +141,6 @@ public class OrderHandler {
         
         try {
             while (rs.next()) {
-                // Kita "pinjam" model CartItem buat nampung data ini biar gampang ditampilin
                 items.add(new CartItem(
                     rs.getString("idProduct"),
                     rs.getString("name"),
@@ -161,10 +154,9 @@ public class OrderHandler {
         return items;
     }
     
- // === METHOD BARU: Sesuai Class Diagram "getAllOrders" ===
+    // method ini untuk admin ambil semua order dari semua customer
     public List<OrderHeader> getAllOrders() {
         List<OrderHeader> orders = new ArrayList<>();
-        // Ambil SEMUA data dari tabel OrderHeaders
         String query = "SELECT * FROM OrderHeaders";
         ResultSet rs = db.execQuery(query);
         
@@ -184,6 +176,7 @@ public class OrderHandler {
         return orders;
     }
     
+    // helper method buat cek stok produk
     private int getProductStock(String productId) {
         String query = "SELECT stock FROM Products WHERE idProduct = '" + productId + "'";
         ResultSet rs = db.execQuery(query);

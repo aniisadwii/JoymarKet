@@ -9,19 +9,18 @@ import javafx.stage.Stage;
 import model.User;
 import util.Session;
 
-// CLASS UNIFIED: Menangani fitur 'Register' DAN 'Edit Profile'
-// Sesuai dengan lifeline 'UserWindow' yang ada di kedua Sequence Diagram
+// class ini merupakan view gabungan untuk fitur register dan edit profile 
 public class UserWindow {
     
     private Stage stage;
     private UserHandler userHandler = new UserHandler();
     
-    // Variabel penentu Mode (Register vs Edit)
+    // variabel penentu mode (register vs edit)
     private boolean isEditMode = false;
     private User currentUser;
 
     // --- CONSTRUCTOR 1: REGISTER MODE ---
-    // Dipanggil dari LoginView (saat belum login)
+    // constructor ini untuk mode registrasi, dipanggil dari halaman login
     public UserWindow(Stage stage) {
         this.stage = stage;
         this.isEditMode = false;
@@ -29,22 +28,23 @@ public class UserWindow {
     }
     
     // --- CONSTRUCTOR 2: EDIT PROFILE MODE ---
-    // Dipanggil dari Dashboard (saat user sudah login)
+    // constructor ini untuk mode edit profile, dipanggil dari dashboard user
     public UserWindow() {
         this.isEditMode = true;
         this.currentUser = Session.getInstance().getUser();
-        // Buat stage baru (pop-up) agar dashboard tidak tertutup
+        // buat stage baru (pop-up) agar dashboard tidak tertutup
         this.stage = new Stage();
         initialize();
     }
 
+    // method ini untuk menyusun form ui secara dinamis (tampilkan field sesuai mode)
     private void initialize() {
-        // Judul & Teks Tombol Dinamis
+        // judul & teks tombol dinamis
         String titleText = isEditMode ? "Edit Profile" : "Register Account";
         Label lblTitle = new Label(titleText);
         lblTitle.setStyle("-fx-font-size: 18px; -fx-font-weight: bold;");
         
-        // Komponen UI (Kita deklarasikan semua, tapi nanti ditampilkan selektif)
+        // komponen ui (deklarasi semua, nanti ditampilkan selektif)
         TextField txtName = new TextField(); txtName.setPromptText("Full Name");
         TextField txtEmail = new TextField(); txtEmail.setPromptText("Email");
         PasswordField txtPass = new PasswordField(); txtPass.setPromptText("Password");
@@ -59,21 +59,21 @@ public class UserWindow {
         Label lblMsg = new Label();
         lblMsg.setStyle("-fx-text-fill: red;");
 
-        // Layout Utama
+        // layout utama
         VBox root = new VBox(10);
         root.setAlignment(Pos.CENTER);
         root.setPadding(new Insets(20));
 
-        // === LOGIC TAMPILAN BERDASARKAN MODE ===
+        // logika untuk membedakan tampilan antara edit profile (isi data lama) dan register (kosong)
         if (isEditMode && currentUser != null) {
             // A. MODE EDIT PROFILE
-            // 1. Isi form dengan data lama
+            // 1. isi form dengan data lama
             txtName.setText(currentUser.getFullName());
             txtPhone.setText(currentUser.getPhone());
             txtAddress.setText(currentUser.getAddress());
             
-            // 2. Tampilkan HANYA field yang boleh diedit (Nama, Phone, Address)
-            // Email dan Password TIDAK ditampilkan sesuai instruksi Docs
+            // 2. tampilkan hanya field yang boleh diedit (nama, phone, address)
+            // email dan password tidak ditampilkan sesuai instruksi docs
             root.getChildren().addAll(
                 lblTitle, 
                 new Label("Full Name:"), txtName, 
@@ -84,7 +84,7 @@ public class UserWindow {
             
         } else {
             // B. MODE REGISTER
-            // Tampilkan SEMUA field termasuk Email dan Password
+            // tampilkan semua field termasuk email dan password
             root.getChildren().addAll(
                 lblTitle, 
                 txtName, txtEmail, txtPass, txtConfirmPass, txtPhone, txtAddress, 
@@ -92,12 +92,12 @@ public class UserWindow {
             );
         }
 
-        // === EVENT HANDLING (Action Tombol) ===
+        // logika tombol submit yang menangani dua skenario berbeda (update atau register)
         btnSubmit.setOnAction(e -> {
             try {
                 if (isEditMode) {
                     // --- LOGIC EDIT PROFILE ---
-                    // Panggil method editProfile (3 parameter)
+                    // panggil controller untuk update data profil yang diizinkan
                     String result = userHandler.editProfile(
                         currentUser.getIdUser(),
                         txtName.getText(),
@@ -107,46 +107,45 @@ public class UserWindow {
                     
                     if (result.equals("Success")) {
                         showAlert(Alert.AlertType.INFORMATION, "Success", "Profile updated successfully!");
-                        stage.close(); // Tutup window edit
+                        stage.close(); // tutup window edit
                     } else {
                         lblMsg.setText(result);
                     }
                     
                 } else {
                     // --- LOGIC REGISTER ---
-                    // Validasi confirm password dulu (khusus register)
+                    // validasi password match dulu sebelum panggil controller register
                     if (!txtPass.getText().equals(txtConfirmPass.getText())) {
                         lblMsg.setText("Password must match confirmation");
                         return;
                     }
                     
-                    // Panggil saveDataUser (5 parameter)
+                    // panggil method simpan data user baru
                     User newUser = userHandler.saveDataUser(
                         txtName.getText(), txtEmail.getText(), txtPass.getText(), 
                         txtPhone.getText(), txtAddress.getText()
                     );
                     
                     showAlert(Alert.AlertType.INFORMATION, "Success", "Registration Successful! Welcome, " + newUser.getFullName());
-                    new LoginView(stage); // Balik ke login screen
+                    new LoginView(stage); // balik ke login screen
                 }
 
             } catch (Exception ex) {
-                // Tangkap error dari UserHandler
+                // tangkap error dari userhandler
                 lblMsg.setText(ex.getMessage());
             }
         });
 
-        // Tombol Back/Cancel
+        // tombol back/cancel
         btnBack.setOnAction(e -> {
             if (isEditMode) {
-                stage.close(); // Tutup pop-up
+                stage.close(); // tutup pop-up
             } else {
-                new LoginView(stage); // Balik ke halaman login
+                new LoginView(stage); // balik ke halaman login
             }
         });
 
-        // Setup Scene
-        // Tinggi window disesuaikan: Edit Profile lebih pendek karena fieldnya dikit
+        // setup scene dengan tinggi window disesuaikan utk edit profile lebih pendek karena fieldnya dikit
         Scene scene = new Scene(root, 400, isEditMode ? 450 : 550); 
         stage.setScene(scene);
         stage.setTitle("JoyMarket - " + titleText);

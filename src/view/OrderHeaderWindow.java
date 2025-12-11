@@ -12,8 +12,7 @@ import model.OrderHeader;
 import util.Session;
 import java.util.List;
 
-// CLASS UNIFIED: Dipakai oleh Customer (History) DAN Admin (View All Orders)
-// Sesuai dengan nama lifeline 'OrderHeaderWindow' di kedua Sequence Diagram (Seq 8 & Seq 11)
+// class ini untuk menampilkan daftar pesanan (history untuk customer, all orders untuk admin)
 public class OrderHeaderWindow {
     
     private Stage stage;
@@ -24,7 +23,7 @@ public class OrderHeaderWindow {
     private VBox layout;
     private TableView<OrderHeader> table;
 
-    // Constructor untuk dipanggil dari Dashboard (Admin/Customer)
+    // constructor ini digunakan saat dipanggil dari dashboard utama admin/customer
     public OrderHeaderWindow(Stage stage) {
         this.stage = stage;
         this.currentUserId = Session.getInstance().getUser().getIdUser();
@@ -32,39 +31,38 @@ public class OrderHeaderWindow {
         initialize();
     }
     
-    // Constructor tanpa stage (opsional, kalau dipanggil sebagai tab content di Admin)
+    // constructor tanpa stage, untuk dipanggil sebagai konten dalam tabpane admin
     public OrderHeaderWindow() {
         this.currentUserId = Session.getInstance().getUser().getIdUser();
         this.currentUserRole = Session.getInstance().getUser().getRole();
         initialize();
     }
 
+    // method ini menyusun layout tampilan list pesanan berdasarkan role user
     private void initialize() {
         layout = new VBox(15);
         layout.setPadding(new Insets(20));
         layout.setAlignment(Pos.CENTER);
 
-        // Judul dinamis berdasarkan Role
-        String titleText = currentUserRole.equals("Admin") ? "All Orders Report 📊" : "My Order History 📜";
+        // judul window menyesuaikan role
+        String titleText = currentUserRole.equals("Admin") ? "All Orders Report" : "My Order History";
         Label lblTitle = new Label(titleText);
         lblTitle.setStyle("-fx-font-size: 20px; -fx-font-weight: bold;");
 
-        // 1. Fetch Data Sesuai Role (Sesuai Class Diagram methods)
+        // 1. ambil data pesanan dari controller sesuai role (admin: semua, customer: punya sendiri)
         List<OrderHeader> orders;
         if (currentUserRole.equals("Admin")) {
-            // Flow Admin: getAllOrders() (Sequence Diagram 11)
             orders = orderHandler.getAllOrders();
         } else {
-            // Flow Customer: getCustomerOrders() (Sequence Diagram 8)
             orders = orderHandler.getCustomerOrders(currentUserId);
         }
 
-        // 2. Decision: Empty or Not? (Activity Diagram)
+        // 2. cek apakah data kosong atau ada isinya
         if (orders.isEmpty()) {
             Label lblEmpty = new Label("No Orders Available");
             lblEmpty.setStyle("-fx-text-fill: grey; -fx-font-size: 16px;");
             
-            // Tombol back cuma perlu kalau ini Window terpisah (bukan Tab)
+            // tampilkan tombol kembali jika ini window terpisah
             if (stage != null) {
                 Button btnBack = new Button("Back to Home");
                 btnBack.setOnAction(e -> new CustomerWindow(stage));
@@ -74,26 +72,27 @@ public class OrderHeaderWindow {
             }
             
         } else {
-            setupTable(); // Setup kolom
-            table.getItems().setAll(orders); // Masukkan data
+            // jika ada data, setup tabel dan tampilkan
+            setupTable(); 
+            table.getItems().setAll(orders); 
 
-            // Area Tombol Aksi
+            // area tombol aksi di bawah tabel
             HBox actions = new HBox(10);
             actions.setAlignment(Pos.CENTER);
 
-            // Tombol View Details (Bisa dipake Admin & Customer)
+            // tombol untuk melihat detail item dalam pesanan
             Button btnDetail = new Button("View Details");
             btnDetail.setOnAction(e -> showOrderDetails());
             actions.getChildren().add(btnDetail);
             
-            // Tombol Refresh (Khusus Admin biasanya butuh)
+            // tombol refresh khusus admin untuk update data terbaru
             if (currentUserRole.equals("Admin")) {
                 Button btnRefresh = new Button("Refresh");
                 btnRefresh.setOnAction(e -> refreshData());
                 actions.getChildren().add(btnRefresh);
             }
 
-            // Tombol Back (Khusus Customer Window)
+            // tombol kembali khusus customer
             if (stage != null && currentUserRole.equals("Customer")) {
                 Button btnBack = new Button("Back to Home");
                 btnBack.setOnAction(e -> new CustomerWindow(stage));
@@ -103,6 +102,7 @@ public class OrderHeaderWindow {
             layout.getChildren().addAll(lblTitle, table, actions);
         }
 
+        // jika ada stage, tampilkan sebagai window baru
         if (stage != null) {
             Scene scene = new Scene(layout, 600, 500);
             stage.setScene(scene);
@@ -111,6 +111,7 @@ public class OrderHeaderWindow {
         }
     }
     
+    // method ini mengatur kolom-kolom tabel yang akan ditampilkan
     private void setupTable() {
         table = new TableView<>();
         
@@ -128,17 +129,17 @@ public class OrderHeaderWindow {
         
         table.getColumns().addAll(colId, colTotal, colStatus, colDate);
         
-        // Khusus Admin, tampilkan juga kolom Customer ID biar tau ini punya siapa
+        // khusus admin, tampilkan kolom customer id agar tahu pemilik pesanan
         if (currentUserRole.equals("Admin")) {
             TableColumn<OrderHeader, String> colCust = new TableColumn<>("Customer ID");
             colCust.setCellValueFactory(new PropertyValueFactory<>("idCustomer"));
-            table.getColumns().add(1, colCust); // Insert di posisi ke-2
+            table.getColumns().add(1, colCust); 
         }
         
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
     }
     
-    // Method untuk refresh data (dipanggil dari AdminMainView atau tombol refresh)
+    // method ini untuk memuat ulang data tabel dari database
     public void refreshData() {
         if (table != null) {
             List<OrderHeader> orders = currentUserRole.equals("Admin") ? 
@@ -148,6 +149,7 @@ public class OrderHeaderWindow {
         }
     }
 
+    // method ini menampilkan popup detail pesanan (item apa saja yang dibeli)
     private void showOrderDetails() {
         OrderHeader selected = table.getSelectionModel().getSelectedItem();
         if (selected == null) {
@@ -155,13 +157,14 @@ public class OrderHeaderWindow {
             return;
         }
 
-        // Panggil method detail
+        // ambil data detail dari controller
         OrderHeader header = orderHandler.getCustomerOrderHeader(selected.getIdOrder(), selected.getIdCustomer());
         List<CartItem> items = orderHandler.getOrderItems(selected.getIdOrder());
         
+        // susun string detail pesanan
         StringBuilder details = new StringBuilder();
         details.append("Order ID: ").append(header.getIdOrder()).append("\n");
-        details.append("Customer: ").append(header.getIdCustomer()).append("\n"); // Info tambahan buat Admin
+        details.append("Customer: ").append(header.getIdCustomer()).append("\n"); 
         details.append("Status: ").append(header.getStatus()).append("\n");
         details.append("------------------------------------------------\n");
         

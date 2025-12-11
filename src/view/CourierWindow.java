@@ -12,18 +12,20 @@ public class CourierWindow {
     private CourierHandler courierHandler = new CourierHandler();
     private VBox layout;
 
+    // constructor ini untuk inisialisasi window daftar kurir
     public CourierWindow() {
         initialize();
     }
 
+    // method ini untuk menyusun layout, tabel, dan tombol aksi pada halaman list kurir
     private void initialize() {
         layout = new VBox(10);
         layout.setPadding(new Insets(10));
 
-        Label lblTitle = new Label("Courier List 🛵");
+        Label lblTitle = new Label("Courier List");
         lblTitle.setStyle("-fx-font-weight: bold; -fx-font-size: 14px;");
 
-        // --- Setup Tabel (Sama kayak sebelumnya) ---
+        // --- setup tabel untuk menampilkan data kurir ---
         TableView<Courier> table = new TableView<>();
         
         TableColumn<Courier, String> colId = new TableColumn<>("ID");
@@ -44,15 +46,15 @@ public class CourierWindow {
         table.getColumns().addAll(colId, colName, colPhone, colVehicle, colPlate);
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
         
-        // Load Data Awal (Pakai getAllCouriers)
+        // memuat data awal ke tabel menggunakan method getAllCouriers dari controller
         refreshTable(table);
         
-        // --- TOMBOL BARU: VIEW DETAILS ---
+        // --- tombol aksi ---
         Button btnDetail = new Button("View Details");
         Button btnRefresh = new Button("Refresh");
 
-        // Logic Tombol View Details
-        // Di sinilah method getCourier(id) dipanggil!
+        // logika tombol ini untuk menampilkan detail lengkap kurir yang dipilih
+        // membuktikan penggunaan method getCourier(id) pada controller
         btnDetail.setOnAction(e -> {
             Courier selected = table.getSelectionModel().getSelectedItem();
             if (selected == null) {
@@ -60,12 +62,11 @@ public class CourierWindow {
                 return;
             }
 
-            // 1. Panggil Controller buat ambil data spesifik (Fresh from DB)
-            // Ini ngebuktiin method getCourier kepake!
+            // 1. panggil controller untuk ambil data spesifik (fresh from db)
             Courier detail = courierHandler.getCourier(selected.getIdUser());
             
             if (detail != null) {
-                // 2. Tampilkan Info Lengkap
+                // 2. format string untuk tampilan detail
                 String info = "Courier Profile:\n\n" +
                               "ID: " + detail.getIdUser() + "\n" +
                               "Name: " + detail.getFullName() + "\n" +
@@ -82,6 +83,7 @@ public class CourierWindow {
             }
         });
 
+        // tombol refresh untuk memuat ulang data tabel
         btnRefresh.setOnAction(e -> refreshTable(table));
 
         HBox actions = new HBox(10, btnDetail, btnRefresh);
@@ -92,11 +94,12 @@ public class CourierWindow {
         return layout;
     }
     
+    // method ini untuk mengambil ulang semua data kurir dan update tampilan tabel
     private void refreshTable(TableView<Courier> table) {
         table.getItems().setAll(courierHandler.getAllCouriers());
     }
     
-    // Method overloading biar praktis
+    // method overloading biar pemanggilan alert lebih praktis
     private void showAlert(Alert.AlertType type, String content) {
         showAlert(type, "Message", content);
     }
